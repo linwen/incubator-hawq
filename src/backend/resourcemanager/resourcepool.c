@@ -874,7 +874,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 		if (segresource->Stat->FTSAvailable == RESOURCE_SEG_STATUS_AVAILABLE)
 		{
 			/* Add this node into the io bytes workload BBST structure. */
-			addSegResourceIOBytesWorkloadIndex(segresource);
+			addSegResourceCombinedWorkloadIndex(segresource);
 			/* Add this node into the alloc/avail resource ordered indices. */
 			addSegResourceAvailIndex(segresource);
 			addSegResourceAllocIndex(segresource);

@@ -64,7 +64,6 @@
 #include "utils/workfile_mgr.h"
 #include "cdb/cdbmetadatacache.h"
 #include "cdb/cdbtmpdir.h"
-#include "utils/mdver.h"
 #include "utils/session_state.h"
 
 shmem_startup_hook_type shmem_startup_hook = NULL;
