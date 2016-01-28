@@ -247,7 +247,7 @@ bool CheckTmpDirAvailable(char *path)
 	char* fname = NULL;
 	char* testfile = "/checktmpdir.log";
 
-	/* write some bytes to a file to check if
+	/* open a file to check if
 	 * this temporary directory is OK.
 	 */
 	fname = palloc0(strlen(path) + strlen(testfile) + 1);
