@@ -258,24 +258,8 @@ bool CheckTmpDirAvailable(char *path)
 	{
 		elog(LOG, "Can't open file:%s when check temporary directory", fname);
 		ret = false;
-		goto _exit;
 	}
 
-	if (fseek(tmp, 0, SEEK_SET) != 0)
-	{
-		elog(LOG, "Can't seek file:%s when check temporary directory", fname);
-		ret = false;
-		goto _exit;
-	}
-
-	if (strlen("test") != fwrite("test", 1, strlen("test"), tmp))
-	{
-		elog(LOG, "Can't write file:%s when check temporary directory", fname);
-		ret = false;
-		goto _exit;
-	}
-
-	_exit:
 	pfree(fname);
 	if (tmp != NULL)
 		fclose(tmp);
