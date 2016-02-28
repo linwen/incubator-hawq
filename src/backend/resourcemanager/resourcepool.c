@@ -622,7 +622,7 @@ void add_segment_history_row(int32_t id, char* hostname, int reason)
 
 	elog(LOG, "Add a new row into segment configuration history catalog table,"
 			  "time: %s, registration order:%d, hostname:%s, desc:%s",
-			  curtimestr, id, hostname, desc);
+			  curtimestr, id, hostname, SegStatusChangeReasonDesc[reason]);
 
 cleanup:
 	if(sql)
