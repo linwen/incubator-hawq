@@ -541,6 +541,87 @@ cleanup:
 }
 
 /*
+ *  Insert a row into gp_configuration_history,
+ *  to record the status change of a segment.
+ *  id : registration order of this segment
+ *  hostname : hostname of this segment
+ *  desc : reason of status change
+ */
+void add_segment_history_row(int32_t id, char* hostname, char* desc)
+{
+	int	libpqres = CONNECTION_OK;
+	PGconn *conn = NULL;
+	char conninfo[1024];
+	PQExpBuffer sql = NULL;
+	PGresult* result = NULL;
+
+	sprintf(conninfo, "options='-c gp_session_role=UTILITY -c allow_system_table_mods=dml' "
+			"dbname=template1 port=%d connect_timeout=%d", master_addr_port, CONNECT_TIMEOUT);
+	conn = PQconnectdb(conninfo);
+	if ((libpqres = PQstatus(conn)) != CONNECTION_OK)
+	{
+		elog(WARNING, "Fail to connect database when add a new row into "
+					  "segment configuration history catalog table, error code: %d, %s",
+					  libpqres,
+					  PQerrorMessage(conn));
+		PQfinish(conn);
+		return;
+	}
+
+	result = PQexec(conn, "BEGIN");
+	if (!result || PQresultStatus(result) != PGRES_COMMAND_OK)
+	{
+		elog(WARNING, "Fail to run SQL: %s when add a new row into "
+					  "segment configuration history catalog table, reason : %s",
+					  "BEGIN",
+					  PQresultErrorMessage(result));
+		goto cleanup;
+	}
+	PQclear(result);
+
+	TimestampTz curtime = GetCurrentTimestamp();
+	const char *curtimestr = timestamptz_to_str(curtime);
+	sql = createPQExpBuffer();
+	appendPQExpBuffer(sql,
+					  "INSERT INTO gp_segment_configuration"
+					  "(time, registration_order, hostname, desc) "
+					  "VALUES (%s,'%d','%s',%s)",
+					  curtimestr, id, hostname, desc);
+
+	result = PQexec(conn, sql->data);
+	if (!result || PQresultStatus(result) != PGRES_COMMAND_OK)
+	{
+		elog(WARNING, "Fail to run SQL: %s when add a new row into "
+				      "segment configuration history catalog table, reason : %s",
+					  sql->data,
+					  PQresultErrorMessage(result));
+		goto cleanup;
+	}
+	PQclear(result);
+
+	result = PQexec(conn, "COMMIT");
+	if (!result || PQresultStatus(result) != PGRES_COMMAND_OK)
+	{
+		elog(WARNING, "Fail to run SQL: %s when add a new row into "
+				      "segment configuration history catalog table, reason : %s",
+					  "COMMIT",
+					  PQresultErrorMessage(result));
+		goto cleanup;
+	}
+
+	elog(LOG, "Add a new row into segment configuration history catalog table,"
+			  "time: %s, registration order:%d, hostname:%s, desc:%s",
+			  curtimestr, id, hostname, desc);
+
+cleanup:
+	if(sql)
+		destroyPQExpBuffer(sql);
+	if(result)
+		PQclear(result);
+	PQfinish(conn);
+}
+
+/*
  *  update a segment's status and failed tmp dir
  *  in gp_segment_configuration table.
  *  id : registration order of this segment
@@ -553,7 +634,7 @@ void update_segment_failed_tmpdir
 {
 	int	libpqres = CONNECTION_OK;
 	PGconn *conn = NULL;
-	char conninfo[512];
+	char conninfo[1024];
 	PQExpBuffer sql = NULL;
 	PGresult* result = NULL;
 
@@ -899,6 +980,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 	 * NOTE: We update the capacity and availability now.
 	 */
 	else {
+		int reason = SEG_STATUS_CHANGE_UNKONWN;
 		segresource = getSegResource(segid);
 		Assert(segresource != NULL);
 		uint8_t oldStatus = segresource->Stat->FTSAvailable;
@@ -929,6 +1011,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 					  GET_SEGRESOURCE_HOSTNAME(segresource),
 					  oldStatus,
 					  segstat->FTSAvailable);
+			reason = SEG_STATUS_CHANGE_DOWN_RM_RESET;
 		}
 
 		/* Check if temporary directory path is changed */
@@ -967,6 +1050,11 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 					update_segment_status(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
 											segstat->FTSAvailable == RESOURCE_SEG_STATUS_AVAILABLE ?
 											SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN);
+					Assert(reason == SEG_STATUS_CHANGE_UP_GET_HEARTBEAT ||
+							reason == SEG_STATUS_CHANGE_DOWN_RM_RESET);
+					add_segment_history_row(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
+											GET_SEGRESOURCE_HOSTNAME(segresource),
+											SegStatusChangeReasonDesc[reason]);
 				}
 
 				setSegResHAWQAvailability(segresource, segstat->FTSAvailable);
@@ -1054,6 +1142,14 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 												 segresource->Stat->FailedTmpDirNum,
 												 segresource->Stat->FailedTmpDirNum == 0 ?
 															 "" : GET_SEGINFO_FAILEDTMPDIR(&segresource->Stat->Info));
+					if (statusChanged)
+					{
+						Assert(oldStatus == RESOURCE_SEG_STATUS_AVAILABLE &&
+								newStatus == RESOURCE_SEG_STATUS_UNAVAILABLE);
+						add_segment_history_row(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
+												GET_SEGRESOURCE_HOSTNAME(segresource),
+												SegStatusChangeReasonDesc[SEG_STATUS_CHANGE_DOWN_FAILED_TMPDIR]);
+					}
 				}
 
 				if (statusChanged)
