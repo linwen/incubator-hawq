@@ -2639,7 +2639,7 @@ void updateStatusOfAllNodes()
 				update_segment_status(idx + REGISTRATION_ORDER_OFFSET, SEGMENT_STATUS_DOWN);
 				add_segment_history_row(idx + REGISTRATION_ORDER_OFFSET,
 										GET_SEGRESOURCE_HOSTNAME(node),
-										SegStatusChangeReasonDesc[SEG_STATUS_CHANGE_DOWN_TIMEOUT]);
+										SEG_STATUS_CHANGE_DOWN_TIMEOUT);
 			}
 
 			elog(WARNING, "Resource manager sets host %s from up to down.",

@@ -698,18 +698,8 @@ enum SegStatusChangeReason {
 	SEG_STATUS_CHANGE_DOWN_RM_RESET
 };
 
-const char* SegStatusChangeReasonDesc[] = {
-	"invalid reason",
-	"segment'status is set to UP because gets a heartbeat from it",
-	"segment'status is set to DOWN because timeout",
-	"segment'status is set to DOWN because RUALive probe failed",
-	"segment'status is set to DOWN because communication error",
-	"segment'status is set to DOWN because failed temporary directory is detected",
-	"segment'status is set to DOWN because its resource manager process is reset"
-};
-
 /* Add a new entry into gp_configuration_history table*/
-void add_segment_history_row(int32_t id, char* hostname, char* desc);
+void add_segment_history_row(int32_t id, char* hostname, int reason);
 /*
  * In resource pool, segment's id starts from 0, however in gp_segment_configuration table,
  * segment registration order starts from 1(0 is for master, -1 is for standby).

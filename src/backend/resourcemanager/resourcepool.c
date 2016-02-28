@@ -540,14 +540,24 @@ cleanup:
 	PQfinish(conn);
 }
 
+static const char* SegStatusChangeReasonDesc[] = {
+	"invalid reason",
+	"segment'status is set to UP because gets a heartbeat from it",
+	"segment'status is set to DOWN because timeout",
+	"segment'status is set to DOWN because RUALive probe failed",
+	"segment'status is set to DOWN because communication error",
+	"segment'status is set to DOWN because failed temporary directory is detected",
+	"segment'status is set to DOWN because its resource manager process is reset"
+};
+
 /*
  *  Insert a row into gp_configuration_history,
  *  to record the status change of a segment.
  *  id : registration order of this segment
  *  hostname : hostname of this segment
- *  desc : reason of status change
+ *  reason : reason of status change
  */
-void add_segment_history_row(int32_t id, char* hostname, char* desc)
+void add_segment_history_row(int32_t id, char* hostname, int reason)
 {
 	int	libpqres = CONNECTION_OK;
 	PGconn *conn = NULL;
@@ -586,7 +596,7 @@ void add_segment_history_row(int32_t id, char* hostname, char* desc)
 					  "INSERT INTO gp_segment_configuration"
 					  "(time, registration_order, hostname, desc) "
 					  "VALUES (%s,'%d','%s',%s)",
-					  curtimestr, id, hostname, desc);
+					  curtimestr, id, hostname, SegStatusChangeReasonDesc[reason]);
 
 	result = PQexec(conn, sql->data);
 	if (!result || PQresultStatus(result) != PGRES_COMMAND_OK)
@@ -1054,7 +1064,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 							reason == SEG_STATUS_CHANGE_DOWN_RM_RESET);
 					add_segment_history_row(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
 											GET_SEGRESOURCE_HOSTNAME(segresource),
-											SegStatusChangeReasonDesc[reason]);
+											reason);
 				}
 
 				setSegResHAWQAvailability(segresource, segstat->FTSAvailable);
@@ -1148,7 +1158,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 								newStatus == RESOURCE_SEG_STATUS_UNAVAILABLE);
 						add_segment_history_row(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
 												GET_SEGRESOURCE_HOSTNAME(segresource),
-												SegStatusChangeReasonDesc[SEG_STATUS_CHANGE_DOWN_FAILED_TMPDIR]);
+												SEG_STATUS_CHANGE_DOWN_FAILED_TMPDIR);
 					}
 				}
 

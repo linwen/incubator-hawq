@@ -1039,7 +1039,7 @@ bool handleRMRequestSegmentIsDown(void **arg)
 											  SEGMENT_STATUS_DOWN);
 						add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 												hostname,
-												SegStatusChangeReasonDesc[SEG_STATUS_CHANGE_DOWN_RUALIVE_FAILED]);
+												SEG_STATUS_CHANGE_DOWN_RUALIVE_FAILED);
 					}
 
 					/* Set the host down. */
