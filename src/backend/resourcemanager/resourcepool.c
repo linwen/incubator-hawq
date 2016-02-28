@@ -547,6 +547,7 @@ static const char* SegStatusChangeReasonDesc[] = {
 	"segment'status is set to DOWN because RUALive probe failed",
 	"segment'status is set to DOWN because communication error",
 	"segment'status is set to DOWN because failed temporary directory is detected",
+	"segment'status is set to UP because there is no failed temporary directory",
 	"segment'status is set to DOWN because its resource manager process is reset"
 };
 
@@ -1154,11 +1155,26 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 															 "" : GET_SEGINFO_FAILEDTMPDIR(&segresource->Stat->Info));
 					if (statusChanged)
 					{
-						Assert(oldStatus == RESOURCE_SEG_STATUS_AVAILABLE &&
-								newStatus == RESOURCE_SEG_STATUS_UNAVAILABLE);
-						add_segment_history_row(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
-												GET_SEGRESOURCE_HOSTNAME(segresource),
-												SEG_STATUS_CHANGE_DOWN_FAILED_TMPDIR);
+						if(oldStatus == RESOURCE_SEG_STATUS_AVAILABLE)
+						{
+							/*
+							 * segment's status is set to DOWN
+							 * because of failed temporary directory
+							 */
+							add_segment_history_row(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
+													GET_SEGRESOURCE_HOSTNAME(segresource),
+													SEG_STATUS_CHANGE_DOWN_FAILED_TMPDIR);
+						}
+						else
+						{
+							/*
+							 * segment's status is set to UP because of
+							 * there is no failed temporary directory
+							 */
+							add_segment_history_row(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
+													GET_SEGRESOURCE_HOSTNAME(segresource),
+													SEG_STATUS_CHANGE_UP_NO_FAILED_TMPDIR);
+						}
 					}
 				}
 
