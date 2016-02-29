@@ -1015,6 +1015,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 			{
 				segstat->FTSAvailable = RESOURCE_SEG_STATUS_UNAVAILABLE;
 				statusChanged = true;
+				reason = SEG_STATUS_CHANGE_DOWN_RM_RESET;
 			}
 			segresource->Stat->RMStartTimestamp = segstat->RMStartTimestamp;
 			elog(LOG, "Master RM finds segment:%s 's RM process has restarted. "
@@ -1022,7 +1023,6 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 					  GET_SEGRESOURCE_HOSTNAME(segresource),
 					  oldStatus,
 					  segstat->FTSAvailable);
-			reason = SEG_STATUS_CHANGE_DOWN_RM_RESET;
 		}
 
 		/* Check if temporary directory path is changed */
