@@ -226,35 +226,6 @@ gp_remove_segment_mirror(PG_FUNCTION_ARGS)
 }
 
 /*
- * Remove all entries in gp_configuration_history.
- *
- * gp_remove_segment_history()
- *
- * Returns:
- *   true upon success, otherwise throws error.
- */
-Datum
-gp_remove_segment_history(PG_FUNCTION_ARGS)
-{
-	int numDel;
-	cqContext cqc;
-
-	mirroring_sanity_check (SUPERUSER | MASTER_ONLY | UTILITY_MODE,
-							"gp_remove_segment_history");
-
-	Relation rel = heap_open(GpConfigHistoryRelationId, AccessExclusiveLock);
-	numDel= caql_getcount(caql_addrel(cqclr(&cqc), rel),
-				cql("DELETE FROM gp_segment_configuration"));
-
-	elog(LOG, "Remove all entries in gp_configuration_history, count : %d.", numDel);
-
-	heap_close(rel, NoLock);
-
-	PG_RETURN_BOOL(true);
-}
-
-
-/*
  * Add a master standby.
  *
  * gp_add_master_standby(hostname, address)
