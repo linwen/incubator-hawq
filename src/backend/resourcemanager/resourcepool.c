@@ -488,8 +488,8 @@ gp_remove_segment_history(PG_FUNCTION_ARGS)
 	PGresult* result = NULL;
 	int ret = true;
 
-	mirroring_sanity_check (SUPERUSER | MASTER_ONLY | UTILITY_MODE,
-							"gp_remove_segment_history");
+	if (!superuser())
+		elog(ERROR, "gp_remove_segment_history can only be run by a superuser");
 
 	sprintf(conninfo, "options='-c gp_session_role=UTILITY -c allow_system_table_mods=dml' "
 			"dbname=template1 port=%d connect_timeout=%d", master_addr_port, CONNECT_TIMEOUT);
