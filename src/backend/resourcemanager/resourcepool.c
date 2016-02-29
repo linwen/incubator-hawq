@@ -542,13 +542,13 @@ cleanup:
 
 static const char* SegStatusChangeReasonDesc[] = {
 	"invalid reason",
-	"segment's status is set to UP because gets a heartbeat from it",
-	"segment's status is set to DOWN because timeout",
-	"segment's status is set to DOWN because RUALive probe failed",
-	"segment's status is set to DOWN because communication error",
-	"segment's status is set to DOWN because failed temporary directory is detected",
-	"segment's status is set to UP because there is no failed temporary directory",
-	"segment's status is set to DOWN because its resource manager process was reset"
+	"segment status is set to UP because gets a heartbeat from it",
+	"segment status is set to DOWN because of heartbeat timeout",
+	"segment status is set to DOWN because RUALive probe failed",
+	"segment status is set to DOWN because of communication error",
+	"segment status is set to DOWN because failed temporary directory is detected",
+	"segment status is set to UP because there is no failed temporary directory",
+	"segment status is set to DOWN because its resource manager process was reset"
 };
 
 /*
