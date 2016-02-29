@@ -594,7 +594,7 @@ void add_segment_history_row(int32_t id, char* hostname, int reason)
 	const char *curtimestr = timestamptz_to_str(curtime);
 	sql = createPQExpBuffer();
 	appendPQExpBuffer(sql,
-					  "INSERT INTO gp_segment_configuration"
+					  "INSERT INTO gp_configuration_history"
 					  "(time, registration_order, hostname, desc) "
 					  "VALUES ('%s','%d','%s','%s')",
 					  curtimestr, id, hostname, SegStatusChangeReasonDesc[reason]);
