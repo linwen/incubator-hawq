@@ -991,7 +991,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 	 * NOTE: We update the capacity and availability now.
 	 */
 	else {
-		int reason = SEG_STATUS_CHANGE_UNKONWN;
+		int reason = SEG_STATUS_CHANGE_UP_GET_HEARTBEAT;
 		segresource = getSegResource(segid);
 		Assert(segresource != NULL);
 		uint8_t oldStatus = segresource->Stat->FTSAvailable;
@@ -1061,8 +1061,6 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 					update_segment_status(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
 											segstat->FTSAvailable == RESOURCE_SEG_STATUS_AVAILABLE ?
 											SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN);
-					Assert(reason == SEG_STATUS_CHANGE_UP_GET_HEARTBEAT ||
-							reason == SEG_STATUS_CHANGE_DOWN_RM_RESET);
 					add_segment_history_row(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
 											GET_SEGRESOURCE_HOSTNAME(segresource),
 											reason);
