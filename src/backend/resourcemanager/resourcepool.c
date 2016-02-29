@@ -948,7 +948,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 
 		/*
 		 * This is a new host registration. Normally the status is available,
-		 * But if the number of failed temporary directory exceeds guc,
+		 * But if there is failed temporary directory,
 		 * this segment is considered as unavailable.
 		 */
 		setSegResHAWQAvailability(segresource, reportStatus);
