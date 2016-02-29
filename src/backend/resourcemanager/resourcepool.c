@@ -890,16 +890,6 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 		/* Create machine information and corresponding resource information. */
 		segresource = createSegResource(segstat);
 
-		if (segresource->Stat->FTSAvailable == RESOURCE_SEG_STATUS_UNAVAILABLE)
-		{
-			/*
-			 * If master gets a heartbeat and this segment status is unavailable,
-			 * it means there is failed temporary directory on this segment.
-			 */
-			Assert(segresource->Stat->FailedTmpDirNum !=0);
-			reason = SEG_STATUS_CHANGE_DOWN_FAILED_TMPDIR;
-		}
-
 		/* Update machine internal ID. */
 		segresource->Stat->ID = PRESPOOL->SegmentIDCounter;
 		PRESPOOL->SegmentIDCounter++;
@@ -964,6 +954,15 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 		 * this segment is considered as unavailable.
 		 */
 		setSegResHAWQAvailability(segresource, reportStatus);
+		if (reportStatus == RESOURCE_SEG_STATUS_UNAVAILABLE)
+		{
+			/*
+			 * If master gets a heartbeat and this segment status is unavailable,
+			 * it means there is failed temporary directory on this segment.
+			 */
+			Assert(segresource->Stat->FailedTmpDirNum != 0);
+			reason = SEG_STATUS_CHANGE_DOWN_FAILED_TMPDIR;
+		}
 
 		/* Add this node into the table gp_segment_configuration */
 		AddressString straddr = NULL;
