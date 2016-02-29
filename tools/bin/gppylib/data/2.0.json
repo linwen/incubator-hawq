@@ -109,7 +109,7 @@
       "CamelCaseRelationId" : "GpConfigHistoryRelationId",
       "UppercaseReltypeOid" : "GP_CONFIGURATION_HISTORY_RELTYPE_OID",
       "colh" : {
-         "desc" : "text",
+         "description" : "text",
          "hostname" : "text",
          "registration_order" : "int4",
          "time" : "timestamptz"
@@ -132,14 +132,14 @@
             "sqltype" : "text"
          },
          {
-            "colname" : "desc",
+            "colname" : "description",
             "ctype" : "text",
             "sqltype" : "text"
          }
       ],
       "filename" : "gp_configuration.h",
       "relid_comment_tag" : "/* relation id: 5006 - gp_configuration_history */\n",
-      "tabdef_text" : "\n   CREATE TABLE gp_configuration_history\n   with (camelcase=GpConfigHistory, shared=true, oid=false, relid=5006, reltype_oid=6434, content=MASTER_ONLY)\n   (\n   time               timestamp with time zone,\n   registration_order integer,\n   hostname           text,\n   \"desc\"             text\n   )",
+      "tabdef_text" : "\n   CREATE TABLE gp_configuration_history\n   with (camelcase=GpConfigHistory, shared=true, oid=false, relid=5006, reltype_oid=6434, content=MASTER_ONLY)\n   (\n   time               timestamp with time zone,\n   registration_order integer,\n   hostname           text,\n   description        text\n   )",
       "tzhack" : "\"time\"",
       "with" : {
          "bootstrap" : 0,

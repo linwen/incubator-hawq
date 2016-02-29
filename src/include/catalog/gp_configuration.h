@@ -138,7 +138,7 @@ typedef FormData_gp_configuration *Form_gp_configuration;
    time               timestamp with time zone,
    registration_order integer,
    hostname           text,
-   "desc"             text
+   description        text
    );
 
    TIDYCAT_ENDDEF
@@ -186,7 +186,7 @@ CATALOG(gp_configuration_history,5006) BKI_SHARED_RELATION BKI_WITHOUT_OIDS
 	timestamptz	time;				
 	int4		registration_order;	
 	text		hostname;			
-	text		desc;				
+	text		description;
 } FormData_gp_configuration_history;
 
 #undef timestamptz
@@ -208,7 +208,7 @@ typedef FormData_gp_configuration_history *Form_gp_configuration_history;
 #define Anum_gp_configuration_history_time					1
 #define Anum_gp_configuration_history_registration_order	2
 #define Anum_gp_configuration_history_hostname				3
-#define Anum_gp_configuration_history_desc					4
+#define Anum_gp_configuration_history_description			4
 
 
 /* TIDYCAT_END_CODEGEN */

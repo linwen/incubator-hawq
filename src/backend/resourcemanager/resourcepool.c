@@ -548,7 +548,7 @@ static const char* SegStatusChangeReasonDesc[] = {
 	"segment's status is set to DOWN because communication error",
 	"segment's status is set to DOWN because failed temporary directory is detected",
 	"segment's status is set to UP because there is no failed temporary directory",
-	"segment's status is set to DOWN because its resource manager process is reset"
+	"segment's status is set to DOWN because its resource manager process was reset"
 };
 
 /*
@@ -595,7 +595,7 @@ void add_segment_history_row(int32_t id, char* hostname, int reason)
 	sql = createPQExpBuffer();
 	appendPQExpBuffer(sql,
 					  "INSERT INTO gp_configuration_history"
-					  "(time, registration_order, hostname, desc) "
+					  "(time, registration_order, hostname, description) "
 					  "VALUES ('%s','%d','%s','%s')",
 					  curtimestr, id, hostname, SegStatusChangeReasonDesc[reason]);
 
@@ -621,7 +621,7 @@ void add_segment_history_row(int32_t id, char* hostname, int reason)
 	}
 
 	elog(LOG, "Add a new row into segment configuration history catalog table,"
-			  "time: %s, registration order:%d, hostname:%s, desc:%s",
+			  "time: %s, registration order:%d, hostname:%s, description:%s",
 			  curtimestr, id, hostname, SegStatusChangeReasonDesc[reason]);
 
 cleanup:
