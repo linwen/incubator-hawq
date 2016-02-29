@@ -833,6 +833,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 	SimpString		 hostnamekey;
 	SimpArray 		 hostaddrkey;
 	bool			 segcapchanged  = false;
+	int 			 reason 		= SEG_STATUS_CHANGE_UNKNOWN;
 
 	/*
 	 * Anyway, the host capacity is updated here if the cluster level capacity
@@ -883,10 +884,21 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
     /* CASE 1. It is a new host. */
 	if ( res != FUNC_RETURN_OK )
 	{
+		reason = SEG_STATUS_CHANGE_UP_GET_HEARTBEAT;
 		uint8_t reportStatus = segstat->FTSAvailable;
 
 		/* Create machine information and corresponding resource information. */
 		segresource = createSegResource(segstat);
+
+		if (segresource->Stat->FTSAvailable == RESOURCE_SEG_STATUS_UNAVAILABLE)
+		{
+			/*
+			 * If master gets a heartbeat and this segment status is unavailable,
+			 * it means there is failed temporary directory on this segment.
+			 */
+			Assert(segresource->Stat->FailedTmpDirNum !=0);
+			reason = SEG_STATUS_CHANGE_DOWN_FAILED_TMPDIR;
+		}
 
 		/* Update machine internal ID. */
 		segresource->Stat->ID = PRESPOOL->SegmentIDCounter;
@@ -936,13 +948,13 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 					  	  	       TYPCONVERT(void *, &hostaddrkey)) == NULL )
 			{
 				setHASHTABLENode( &(PRESPOOL->SegmentHostAddrIndexed),
-							  	  TYPCONVERT(void *, &hostaddrkey),
+								  TYPCONVERT(void *, &hostaddrkey),
 								  TYPCONVERT(void *, segid),
 								  false /* There should be no old value. */);
 
 				elog(LOG, "Resource manager tracked ip address '%.*s' for host '%s'",
 						  hostaddrkey.Len, hostaddrkey.Array,
-					      hostname);
+						  hostname);
 			}
 		}
 
@@ -970,6 +982,9 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 									segresource->Stat->FailedTmpDirNum,
 									segresource->Stat->FailedTmpDirNum == 0 ?
 										"":GET_SEGINFO_FAILEDTMPDIR(&segresource->Stat->Info));
+			add_segment_history_row(segid+REGISTRATION_ORDER_OFFSET,
+									hostname,
+									reason);
 		}
 
 		if (segresource->Stat->FTSAvailable == RESOURCE_SEG_STATUS_AVAILABLE)
@@ -991,7 +1006,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 	 * NOTE: We update the capacity and availability now.
 	 */
 	else {
-		int reason = SEG_STATUS_CHANGE_UP_GET_HEARTBEAT;
+		reason = SEG_STATUS_CHANGE_UP_GET_HEARTBEAT;
 		segresource = getSegResource(segid);
 		Assert(segresource != NULL);
 		uint8_t oldStatus = segresource->Stat->FTSAvailable;
