@@ -542,13 +542,13 @@ cleanup:
 
 static const char* SegStatusChangeReasonDesc[] = {
 	"invalid reason",
-	"segment'status is set to UP because gets a heartbeat from it",
-	"segment'status is set to DOWN because timeout",
-	"segment'status is set to DOWN because RUALive probe failed",
-	"segment'status is set to DOWN because communication error",
-	"segment'status is set to DOWN because failed temporary directory is detected",
-	"segment'status is set to UP because there is no failed temporary directory",
-	"segment'status is set to DOWN because its resource manager process is reset"
+	"segment's status is set to UP because gets a heartbeat from it",
+	"segment's status is set to DOWN because timeout",
+	"segment's status is set to DOWN because RUALive probe failed",
+	"segment's status is set to DOWN because communication error",
+	"segment's status is set to DOWN because failed temporary directory is detected",
+	"segment's status is set to UP because there is no failed temporary directory",
+	"segment's status is set to DOWN because its resource manager process is reset"
 };
 
 /*
@@ -596,7 +596,7 @@ void add_segment_history_row(int32_t id, char* hostname, int reason)
 	appendPQExpBuffer(sql,
 					  "INSERT INTO gp_segment_configuration"
 					  "(time, registration_order, hostname, desc) "
-					  "VALUES (%s,'%d','%s',%s)",
+					  "VALUES ('%s','%d','%s','%s')",
 					  curtimestr, id, hostname, SegStatusChangeReasonDesc[reason]);
 
 	result = PQexec(conn, sql->data);
