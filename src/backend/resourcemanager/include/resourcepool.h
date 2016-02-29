@@ -689,7 +689,7 @@ void add_segment_config_row(int32_t 	 id,
 							char*		 failed_tmpdir);
 
 enum SegStatusChangeReason {
-	SEG_STATUS_CHANGE_UNKONWN,
+	SEG_STATUS_CHANGE_UNKNOWN,
 	SEG_STATUS_CHANGE_UP_GET_HEARTBEAT,
 	SEG_STATUS_CHANGE_DOWN_TIMEOUT,
 	SEG_STATUS_CHANGE_DOWN_RUALIVE_FAILED,
