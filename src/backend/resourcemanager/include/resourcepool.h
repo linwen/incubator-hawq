@@ -152,6 +152,8 @@ struct SegStatData {
 	uint32_t		GRMTotalMemoryMB;		/* GRM reports memory capacity.	  */
 	uint32_t		GRMTotalCore;			/* GRM reports core capacity. 	  */
 	uint64_t		RMStartTimestamp;		/* RM process reset timestamp */
+	uint32_t		StatusReason;			/* Reason of status, refer to SegStatusChangeReason */
+	uint32_t		Reserved;
 	SegInfoData		Info;					/* 64-bit aligned.				  */
 };
 
@@ -610,7 +612,7 @@ int returnResourceToResourcePool(int 		memory,
 void returnAllGRMResourceFromSegment(SegResource segres);
 void dropAllGRMContainersFromSegment(SegResource segres);
 
-void returnAllGRMResourceFromGRMUnavailableSegments(void);
+void returnAllGRMResourceFromUnavailableSegments(void);
 
 void generateSegResourceReport(int32_t nodeid, SelfMaintainBuffer buff);
 
@@ -694,9 +696,11 @@ enum SegStatusChangeReason {
 	SEG_STATUS_CHANGE_DOWN_TIMEOUT,
 	SEG_STATUS_CHANGE_DOWN_RUALIVE_FAILED,
 	SEG_STATUS_CHANGE_DOWN_COMMUNICATION_ERROR,
-	SEG_STATUS_CHANGE_DOWN_FAILED_TMPDIR,
 	SEG_STATUS_CHANGE_UP_NO_FAILED_TMPDIR,
-	SEG_STATUS_CHANGE_DOWN_RM_RESET
+	SEG_STATUS_CHANGE_DOWN_FAILED_TMPDIR,
+	SEG_STATUS_CHANGE_DOWN_RM_RESET,
+	SEG_STATUS_CHANGE_UP_YARN_NODE_REPORT,
+	SEG_STATUS_CHANGE_DOWN_NO_YARN_NODE_REPORT,
 };
 
 /* Add a new entry into gp_configuration_history table*/

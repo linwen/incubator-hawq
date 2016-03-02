@@ -575,9 +575,9 @@ void update_segment_status(int32_t id, char status)
 	if ((libpqres = PQstatus(conn)) != CONNECTION_OK)
 	{
 		elog(WARNING, "Fail to connect database when update segment's status "
-				      "in segment configuration catalog table, error code: %d, %s",
-				      libpqres,
-				      PQerrorMessage(conn));
+					  "in segment configuration catalog table, error code: %d, %s",
+					  libpqres,
+					  PQerrorMessage(conn));
 		PQfinish(conn);
 		return;
 	}
@@ -586,9 +586,9 @@ void update_segment_status(int32_t id, char status)
 	if (!result || PQresultStatus(result) != PGRES_COMMAND_OK)
 	{
 		elog(WARNING, "Fail to run SQL: %s when update segment's status "
-				      "in segment configuration catalog table, reason : %s",
-				      "BEGIN",
-				      PQresultErrorMessage(result));
+					  "in segment configuration catalog table, reason : %s",
+					  "BEGIN",
+					  PQresultErrorMessage(result));
 		goto cleanup;
 	}
 	PQclear(result);
@@ -600,9 +600,9 @@ void update_segment_status(int32_t id, char status)
 	if (!result || PQresultStatus(result) != PGRES_COMMAND_OK)
 	{
 		elog(WARNING, "Fail to run SQL: %s when update segment's status "
-				      "in segment configuration catalog table, reason : %s",
-				      sql->data,
-				      PQresultErrorMessage(result));
+					  "in segment configuration catalog table, reason : %s",
+					  sql->data,
+					  PQresultErrorMessage(result));
 		goto cleanup;
 	}
 	PQclear(result);
@@ -631,13 +631,15 @@ cleanup:
 
 static const char* SegStatusChangeReasonDesc[] = {
 	"invalid reason",
-	"segment status is set to UP because gets a heartbeat from it",
+	"segment status is set to UP because master gets a heartbeat from it",
 	"segment status is set to DOWN because of heartbeat timeout",
-	"segment status is set to DOWN because RUALive probe failed",
+	"segment status is set to DOWN because RUALive probe is failed",
 	"segment status is set to DOWN because of communication error",
-	"segment status is set to DOWN because failed temporary directory is detected",
 	"segment status is set to UP because there is no failed temporary directory",
-	"segment status is set to DOWN because its resource manager process was reset"
+	"segment status is set to DOWN because failed temporary directory is detected",
+	"segment status is set to DOWN because its resource manager process was reset",
+	"segment status is set to UP because master gets its YARN node report",
+	"segment status is set to DOWN because master hasn't get its YARN node report",
 };
 
 /*
@@ -703,7 +705,7 @@ void add_segment_history_row(int32_t id, char* hostname, int reason)
 	if (!result || PQresultStatus(result) != PGRES_COMMAND_OK)
 	{
 		elog(WARNING, "Fail to run SQL: %s when add a new row into "
-				      "segment configuration history catalog table, reason : %s",
+					  "segment configuration history catalog table, reason : %s",
 					  "COMMIT",
 					  PQresultErrorMessage(result));
 		goto cleanup;
@@ -940,37 +942,37 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 	 */
 	hostname 	= GET_SEGINFO_HOSTNAME(&(segstat->Info));
 	hostnamelen = segstat->Info.HostNameLen;
-    res = getSegIDByHostName(hostname, hostnamelen, &segid);
-    if ( res != FUNC_RETURN_OK )
-    {
-    	/* Try addresses of this machine. */
-    	for ( int i = 0 ; i < segstat->Info.HostAddrCount ; ++i )
-    	{
+	res = getSegIDByHostName(hostname, hostnamelen, &segid);
+	if ( res != FUNC_RETURN_OK )
+	{
+		/* Try addresses of this machine. */
+		for ( int i = 0 ; i < segstat->Info.HostAddrCount ; ++i )
+		{
 
-    		elog(DEBUG5, "Resource manager checks host ip (%d)th to get segment.", i);
-    		AddressString addr = NULL;
-    		getSegInfoHostAddrStr(&(segstat->Info), i, &addr);
-    		if ( strcmp(addr->Address, IPV4_DOT_ADDR_LO) == 0 &&
-    			 segstat->Info.HostAddrCount > 1 )
-    		{
-    			/*
-    			 * If the host has only one address as 127.0.0.1, we have to
-    			 * save it to track the only one segment, otherwise, we skip
-    			 * 127.0.0.1 address in resource pool. Because, each node has
-    			 * one entry of this address.
-    			 */
-    			continue;
-    		}
+			elog(DEBUG5, "Resource manager checks host ip (%d)th to get segment.", i);
+			AddressString addr = NULL;
+			getSegInfoHostAddrStr(&(segstat->Info), i, &addr);
+			if ( strcmp(addr->Address, IPV4_DOT_ADDR_LO) == 0 &&
+				 segstat->Info.HostAddrCount > 1 )
+			{
+				/*
+				 * If the host has only one address as 127.0.0.1, we have to
+				 * save it to track the only one segment, otherwise, we skip
+				 * 127.0.0.1 address in resource pool. Because, each node has
+				 * one entry of this address.
+				 */
+				continue;
+			}
 
-    		res = getSegIDByHostAddr((uint8_t *)(addr->Address), addr->Length, &segid);
-    		if ( res == FUNC_RETURN_OK )
-    		{
-    			break;
-    		}
-    	}
-    }
+			res = getSegIDByHostAddr((uint8_t *)(addr->Address), addr->Length, &segid);
+			if ( res == FUNC_RETURN_OK )
+			{
+				break;
+			}
+		}
+	}
 
-    /* CASE 1. It is a new host. */
+	/* CASE 1. It is a new host. */
 	if ( res != FUNC_RETURN_OK )
 	{
 		reason = SEG_STATUS_CHANGE_UP_GET_HEARTBEAT;
@@ -1042,7 +1044,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 		 * But if there is failed temporary directory,
 		 * this segment is considered as unavailable.
 		 */
-		setSegResHAWQAvailability(segresource, reportStatus);
+
 		if (reportStatus == RESOURCE_SEG_STATUS_UNAVAILABLE)
 		{
 			/*
@@ -1052,6 +1054,18 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 			Assert(segresource->Stat->FailedTmpDirNum != 0);
 			reason = SEG_STATUS_CHANGE_DOWN_FAILED_TMPDIR;
 		}
+
+		/*
+		 * If in Yarn mode, the new registered segment is marked
+		 * as DOWN, since master hasn't get a cluster report for it from YARN.
+		 */
+		if (reportStatus == RESOURCE_SEG_STATUS_AVAILABLE &&
+				DRMGlobalInstance->ImpType != NONE_HAWQ2)
+		{
+			reportStatus = RESOURCE_SEG_STATUS_AVAILABLE;
+			reason = SEG_STATUS_CHANGE_NO_YARN_NODE_REPORT;
+		}
+		setSegResHAWQAvailability(segresource, reportStatus);
 
 		/* Add this node into the table gp_segment_configuration */
 		AddressString straddr = NULL;
@@ -1099,6 +1113,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 		Assert(segresource != NULL);
 		uint8_t oldStatus = segresource->Stat->FTSAvailable;
 		bool statusChanged = oldStatus != segstat->FTSAvailable;
+		bool reasonChanged = false;
 
 		/*
 		 * Check if RM process is restarted in this segment.
@@ -1159,6 +1174,26 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 		{
 			if (statusChanged && !tmpDirChanged)
 			{
+				/*
+				 * If in yarn mode and FTS status is changed to available
+				 * from unavailable, check the GRM status. Unless it is
+				 * GRM available, then mark this segment to UP.
+				 */
+				if(oldStatus == RESOURCE_SEG_STATUS_UNAVAILABLE
+						&& DRMGlobalInstance->ImpType != NONE_HAWQ2)
+				{
+					if (!IS_SEGSTAT_GRMAVAILABLE(segresource->Stat))
+					{
+						segstat->FTSAvailable == RESOURCE_SEG_STATUS_UNAVAILABLE;
+						reason = SEG_STATUS_CHANGE_DOWN_NO_YARN_NODE_REPORT;
+						statusChanged = false;
+					}
+					else
+					{
+						reason = SEG_STATUS_CHANGE_UP_YARN_NODE_REPORT;
+					}
+				}
+
 				if (Gp_role != GP_ROLE_UTILITY)
 				{
 					update_segment_status(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
@@ -1245,6 +1280,23 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 				segresource->Stat->Info.FailedTmpDirLen = segstat->Info.FailedTmpDirLen;
 				segresource->Stat->FailedTmpDirNum = segstat->FailedTmpDirNum;
 
+				/*
+				 * If in yarn mode and FTS status is changed to available
+				 * from unavailable, check the GRM status. Unless it is
+				 * GRM available, then mark this segment to UP.
+				 */
+				if(oldStatus == RESOURCE_SEG_STATUS_UNAVAILABLE
+						&& DRMGlobalInstance->ImpType != NONE_HAWQ2 && statusChanged)
+				{
+					if (!IS_SEGSTAT_GRMAVAILABLE(segresource->Stat))
+					{
+						segstat->FTSAvailable == RESOURCE_SEG_STATUS_UNAVAILABLE;
+						reason = SEG_STATUS_CHANGE_DOWN_NO_YARN_NODE_REPORT;
+						reasonChanged = true;
+						statusChanged = false;
+					}
+				}
+
 				setSegResHAWQAvailability(segresource, segstat->FTSAvailable);
 				if (Gp_role != GP_ROLE_UTILITY)
 				{
@@ -1254,7 +1306,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 												 segresource->Stat->FailedTmpDirNum,
 												 segresource->Stat->FailedTmpDirNum == 0 ?
 															 "" : GET_SEGINFO_FAILEDTMPDIR(&segresource->Stat->Info));
-					if (statusChanged)
+					if (statusChanged || reasonChanged)
 					{
 						if(oldStatus == RESOURCE_SEG_STATUS_AVAILABLE)
 						{
@@ -1269,12 +1321,13 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 						else
 						{
 							/*
-							 * segment's status is set to UP because of
-							 * there is no failed temporary directory
+							 * segment's status is set to UP(or down because of no yarn report),
+							 *  because of there is no failed temporary directory
 							 */
 							add_segment_history_row(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
 													GET_SEGRESOURCE_HOSTNAME(segresource),
-													SEG_STATUS_CHANGE_UP_NO_FAILED_TMPDIR);
+													reason == SEG_STATUS_CHANGE_DOWN_NO_YARN_NODE_REPORT ? reason:
+																SEG_STATUS_CHANGE_UP_NO_FAILED_TMPDIR);
 						}
 					}
 				}
@@ -1485,14 +1538,20 @@ int updateHAWQSegWithGRMSegStat( SegStat segstat)
 		segres->Stat->GRMTotalMemoryMB = segstat->GRMTotalMemoryMB;
 		segres->Stat->GRMTotalCore     = segstat->GRMTotalCore;
 
-		/* Update overall cluster resource capacity. */
-		minusResourceBundleData(&(PRESPOOL->GRMTotal), oldgrmmem, oldgrmcore);
-		addResourceBundleData(&(PRESPOOL->GRMTotal),
-						  	  segres->Stat->GRMTotalMemoryMB,
-							  segres->Stat->GRMTotalCore);
+		/*
+		 * If this segment is FTS available, then
+		 * update overall cluster resource capacity.
+		 */
+		if (IS_SEGSTAT_FTSAVAILABLE(segres->Stat))
+		{
+			minusResourceBundleData(&(PRESPOOL->GRMTotal), oldgrmmem, oldgrmcore);
+			addResourceBundleData(&(PRESPOOL->GRMTotal),
+								  segres->Stat->GRMTotalMemoryMB,
+								  segres->Stat->GRMTotalCore);
+		}
 
 		elog(LOG, "Resource manager finds host %s capacity changed from "
-				    "GRM (%d MB, %d CORE) to GRM (%d MB, %d CORE)",
+					"GRM (%d MB, %d CORE) to GRM (%d MB, %d CORE)",
 					GET_SEGRESOURCE_HOSTNAME(segres),
 					oldgrmmem,
 					oldgrmcore,
@@ -1714,9 +1773,9 @@ void generateSegResourceReport(int32_t segid, SelfMaintainBuffer buff)
 		static char reporthead[256];
 
 		int headsize = sprintf(reporthead,
-                			   "SEGMENT:ID=%d, "
-                			   "HAWQAVAIL=%d,GLOBAVAIL=%d. "
-                			   "FTS( %d MB, %d CORE). "
+							   "SEGMENT:ID=%d, "
+							   "HAWQAVAIL=%d,GLOBAVAIL=%d. "
+							   "FTS( %d MB, %d CORE). "
 							   "GRM( %d MB, %d CORE). "
 							   "MEM=%d(%d) MB. "
 							   "CORE=%lf(%lf).\n",
@@ -1730,7 +1789,7 @@ void generateSegResourceReport(int32_t segid, SelfMaintainBuffer buff)
 							   seg->Allocated.MemoryMB,
 							   seg->Available.MemoryMB,
 							   seg->Allocated.Core,
-                			   seg->Available.Core);
+							   seg->Available.Core);
 		appendSelfMaintainBuffer(buff, reporthead, headsize);
 		generateSegInfoReport(&(seg->Stat->Info), buff);
 	}
@@ -3169,9 +3228,9 @@ void returnAllGRMResourceFromSegment(SegResource segres)
 
 /*
  * Go through each segment, and return the GRM containers in those segments
- * global resource manager unavailable.
+ * with GRM unavailable or FTS unavailable.
  */
-void returnAllGRMResourceFromGRMUnavailableSegments(void)
+void returnAllGRMResourceFromUnavailableSegments(void)
 {
 	List 	 *allsegres = NULL;
 	ListCell *cell		= NULL;
@@ -3181,7 +3240,8 @@ void returnAllGRMResourceFromGRMUnavailableSegments(void)
 	foreach(cell, allsegres)
 	{
 		SegResource segres = (SegResource)(((PAIR)lfirst(cell))->Value);
-		if ( IS_SEGSTAT_GRMAVAILABLE(segres->Stat) )
+		if ( IS_SEGSTAT_GRMAVAILABLE(segres->Stat) ||
+			 IS_SEGSTAT_FTSAVAILABLE(segres->Stat))
 		{
 			continue;
 		}

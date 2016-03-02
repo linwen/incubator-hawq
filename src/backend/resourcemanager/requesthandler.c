@@ -1140,7 +1140,7 @@ bool handleRMRequestTmpDir(void **arg)
                                    RESPONSE_QD_TMPDIR);
         
         elog(LOG, "Resource manager assigned temporary directory %s",
-        		  tmpdir->Str);
+                  tmpdir->Str);
     }
 
     conntrack->ResponseSent = false;
@@ -1287,11 +1287,11 @@ bool handleRMRequestDummy(void **arg)
                                sizeof(response),
                                conntrack->MessageMark1,
                                conntrack->MessageMark2,
-							   RESPONSE_DUMMY);
+                               RESPONSE_DUMMY);
     conntrack->ResponseSent = false;
-	MEMORY_CONTEXT_SWITCH_TO(PCONTEXT)
-	PCONTRACK->ConnToSend = lappend(PCONTRACK->ConnToSend, conntrack);
-	MEMORY_CONTEXT_SWITCH_BACK
+    MEMORY_CONTEXT_SWITCH_TO(PCONTEXT)
+    PCONTRACK->ConnToSend = lappend(PCONTRACK->ConnToSend, conntrack);
+    MEMORY_CONTEXT_SWITCH_BACK
 
     return true;
 }
