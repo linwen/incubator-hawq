@@ -536,7 +536,9 @@ int handleRB2RM_ClusterReport(void)
 	uint32_t	segsize;
 	int			fd 		    = ResBrokerNotifyPipe[0];
 	int			piperes     = 0;
-	List	   *segstats	= NULL;
+	List		*segstats	= NULL;
+	List		*allsegres  = NULL;
+	ListCell	*cell		= NULL;
 
 	PRESPOOL->RBClusterReportCounter++;
 
@@ -683,6 +685,70 @@ int handleRB2RM_ClusterReport(void)
 		rm_pfree(PCONTEXT, segstat);
 		segstats = list_delete_first(segstats);
 	}
+
+	/*
+	 * iterate all segments, check its FTS and GLOB status.
+	 */
+	getAllPAIRRefIntoList(&(PRESPOOL->Segments), &allsegres);
+	foreach(cell, allsegres)
+	{
+		SegResource segres = (SegResource)(((PAIR)lfirst(cell))->Value);
+
+		if(IS_SEGSTAT_FTSAVAILABLE(segres->Stat) &&
+			!IS_SEGSTAT_GRMAVAILABLE(segres->Stat))
+		{
+			/*
+			 * This segment is FTS available, but GRM is unavailable(maybe
+			 * master hasn't get a cluster report for it from YARN).
+			 * Mark this segment as DOWN in gp_segment_configuration table
+			 * and add an entry in gp_configuration_history
+			 */
+			setSegStatHAWQAvailability(segres->Stat, RESOURCE_SEG_STATUS_UNAVAILABLE);
+			if (Gp_role != GP_ROLE_UTILITY)
+			{
+				update_segment_status(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
+										SEGMENT_STATUS_DOWN);
+				add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
+										GET_SEGRESOURCE_HOSTNAME(segres),
+										SEG_STATUS_CHANGE_DOWN_NO_YARN_NODE_REPORT);
+			}
+			segres->Stat->StatusReason = SEG_STATUS_CHANGE_DOWN_NO_YARN_NODE_REPORT;
+			elog(RMLOG, "Resource manager hasn't get node(%s) information "
+						"from Yarn cluster report, mark it to DOWN.",
+						GET_SEGRESOURCE_HOSTNAME(segres));
+		}
+		else if(!IS_SEGSTAT_FTSAVAILABLE(segres->Stat) &&
+				segres->Stat->StatusReason == SEG_STATUS_CHANGE_DOWN_NO_YARN_NODE_REPORT &&
+				IS_SEGSTAT_GRMAVAILABLE(segres->Stat))
+		{
+			/*
+			 * This segment is FTS unavailable, and the reason
+			 * is because master hasn't get a cluster report for it from YARN.
+			 * Now it is GRM available, so mark it UP in gp_segment_configuration table
+			 * and add an entry in gp_configuration_history
+			 */
+			setSegStatHAWQAvailability(segres->Stat, RESOURCE_SEG_STATUS_AVAILABLE);
+			if (Gp_role != GP_ROLE_UTILITY)
+			{
+				update_segment_status(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
+										SEGMENT_STATUS_UP);
+				add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
+										GET_SEGRESOURCE_HOSTNAME(segres),
+										SEG_STATUS_CHANGE_UP_YARN_NODE_REPORT);
+			}
+			segres->Stat->StatusReason = SEG_STATUS_CHANGE_UP_YARN_NODE_REPORT;
+			elog(RMLOG, "Resource manager gets node(%s) information "
+						"from Yarn cluster report, mark it to UP.",
+						GET_SEGRESOURCE_HOSTNAME(segres));
+		}
+		else
+		{
+			/* skip the other status change */
+			continue;
+		}
+	}
+	freePAIRRefList(&(PRESPOOL->Segments), &allsegres);
+
 	MEMORY_CONTEXT_SWITCH_BACK
 
 	elog(LOG, "Resource manager YARN resource broker counted HAWQ cluster now "
@@ -694,10 +760,10 @@ int handleRB2RM_ClusterReport(void)
 			  PRESPOOL->GRMTotalHavingNoHAWQNode.Core);
 
 	/*
-	 * If the segment is not GRM available, RM should return all containers
-	 * located upon them.
+	 * If the segment is GRM unavailable or FTS unavailable,
+	 * RM should return all containers located upon them.
 	 */
-	returnAllGRMResourceFromGRMUnavailableSegments();
+	returnAllGRMResourceFromUnavailableSegments();
 
 	/* Refresh available node count. */
 	refreshAvailableNodeCount();
@@ -706,7 +772,7 @@ int handleRB2RM_ClusterReport(void)
 	PQUEMGR->GRMQueueCapacity	 	= response.QueueCapacity;
 	PQUEMGR->GRMQueueCurCapacity 	= response.QueueCurCapacity;
 	PQUEMGR->GRMQueueMaxCapacity 	= (response.QueueMaxCapacity > 0 &&
-								   	   response.QueueMaxCapacity <= 1) ?
+									  response.QueueMaxCapacity <= 1) ?
 									  response.QueueMaxCapacity :
 									  PQUEMGR->GRMQueueMaxCapacity;
 	PQUEMGR->GRMQueueResourceTight 	= response.ResourceTight > 0 ? true : false;
@@ -714,9 +780,9 @@ int handleRB2RM_ClusterReport(void)
 	refreshResourceQueueCapacity(false);
 	refreshActualMinGRMContainerPerSeg();
 
-    PRESPOOL->LastUpdateTime = gettime_microsec();
+	PRESPOOL->LastUpdateTime = gettime_microsec();
 
-    return FUNC_RETURN_OK;
+	return FUNC_RETURN_OK;
 }
 
 /*
