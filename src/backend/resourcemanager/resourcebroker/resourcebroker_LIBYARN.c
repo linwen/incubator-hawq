@@ -714,7 +714,7 @@ int handleRB2RM_ClusterReport(void)
 			}
 			segres->Stat->StatusReason = SEG_STATUS_CHANGE_DOWN_NO_YARN_NODE_REPORT;
 			elog(RMLOG, "Resource manager hasn't get node(%s) information "
-						"from Yarn cluster report, mark it to DOWN."
+						"from Yarn cluster report, mark it to DOWN.",
 						GET_SEGRESOURCE_HOSTNAME(segres));
 		}
 		else if(!IS_SEGSTAT_FTSAVAILABLE(segres->Stat) &&
@@ -738,7 +738,7 @@ int handleRB2RM_ClusterReport(void)
 			}
 			segres->Stat->StatusReason = SEG_STATUS_CHANGE_UP_YARN_NODE_REPORT;
 			elog(RMLOG, "Resource manager gets node(%s) information "
-						"from Yarn cluster report, mark it to UP."
+						"from Yarn cluster report, mark it to UP.",
 						GET_SEGRESOURCE_HOSTNAME(segres));
 		}
 		else

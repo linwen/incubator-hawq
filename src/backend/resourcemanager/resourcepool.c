@@ -1063,7 +1063,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 				DRMGlobalInstance->ImpType != NONE_HAWQ2)
 		{
 			reportStatus = RESOURCE_SEG_STATUS_AVAILABLE;
-			reason = SEG_STATUS_CHANGE_NO_YARN_NODE_REPORT;
+			reason = SEG_STATUS_CHANGE_DOWN_NO_YARN_NODE_REPORT;
 		}
 		setSegResHAWQAvailability(segresource, reportStatus);
 
