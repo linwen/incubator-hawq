@@ -639,7 +639,7 @@ static const char* SegStatusChangeReasonDesc[] = {
 	"segment status is set to DOWN because failed temporary directory is detected",
 	"segment status is set to DOWN because its resource manager process was reset",
 	"segment status is set to UP because master gets its YARN node report",
-	"segment status is set to DOWN because master hasn't get its YARN node report",
+	"segment status is set to DOWN because master has not get its YARN node report",
 };
 
 /*
