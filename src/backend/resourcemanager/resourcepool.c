@@ -1052,7 +1052,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 			 * it means there is failed temporary directory on this segment.
 			 */
 			Assert(segresource->Stat->FailedTmpDirNum != 0);
-			reason = SEG_STATUS_CHANGE_DOWN_FAILED_TMPDIR;
+			reason = segresource->Stat->StatusReason = SEG_STATUS_CHANGE_DOWN_FAILED_TMPDIR;
 		}
 
 		/*
@@ -1063,8 +1063,9 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 				DRMGlobalInstance->ImpType != NONE_HAWQ2)
 		{
 			reportStatus = RESOURCE_SEG_STATUS_UNAVAILABLE;
-			reason = SEG_STATUS_CHANGE_DOWN_NO_YARN_NODE_REPORT;
+			reason = segresource->Stat->StatusReason = SEG_STATUS_CHANGE_DOWN_NO_YARN_NODE_REPORT;
 		}
+		segresource->Stat->StatusReason = reason;
 		setSegResHAWQAvailability(segresource, reportStatus);
 
 		/* Add this node into the table gp_segment_configuration */
@@ -1133,7 +1134,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 			{
 				segstat->FTSAvailable = RESOURCE_SEG_STATUS_UNAVAILABLE;
 				statusChanged = true;
-				reason = SEG_STATUS_CHANGE_DOWN_RM_RESET;
+				reason = segresource->Stat->StatusReason = SEG_STATUS_CHANGE_DOWN_RM_RESET;
 			}
 			segresource->Stat->RMStartTimestamp = segstat->RMStartTimestamp;
 			elog(LOG, "Master RM finds segment:%s 's RM process has restarted. "
@@ -1185,41 +1186,43 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 					if (!IS_SEGSTAT_GRMAVAILABLE(segresource->Stat))
 					{
 						segstat->FTSAvailable == RESOURCE_SEG_STATUS_UNAVAILABLE;
-						reason = SEG_STATUS_CHANGE_DOWN_NO_YARN_NODE_REPORT;
+						reason = segresource->Stat->StatusReason = SEG_STATUS_CHANGE_DOWN_NO_YARN_NODE_REPORT;
 						statusChanged = false;
 					}
 					else
 					{
-						reason = SEG_STATUS_CHANGE_UP_YARN_NODE_REPORT;
+						reason = segresource->Stat->StatusReason = SEG_STATUS_CHANGE_UP_YARN_NODE_REPORT;
 					}
 				}
+				segresource->Stat->StatusReason = reason;
+				if (statusChanged) {
+					if (Gp_role != GP_ROLE_UTILITY)
+					{
+						update_segment_status(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
+												segstat->FTSAvailable == RESOURCE_SEG_STATUS_AVAILABLE ?
+												SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN);
+						add_segment_history_row(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
+												GET_SEGRESOURCE_HOSTNAME(segresource),
+												reason);
+					}
 
-				if (Gp_role != GP_ROLE_UTILITY)
-				{
-					update_segment_status(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
-											segstat->FTSAvailable == RESOURCE_SEG_STATUS_AVAILABLE ?
-											SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN);
-					add_segment_history_row(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
-											GET_SEGRESOURCE_HOSTNAME(segresource),
-											reason);
+					setSegResHAWQAvailability(segresource, segstat->FTSAvailable);
+					/*
+					 * Segment is set from up to down, return resource.
+					 */
+					if (oldStatus == RESOURCE_SEG_STATUS_AVAILABLE)
+					{
+						*capstatchanged = true;
+						returnAllGRMResourceFromSegment(segresource);
+					}
+
+					elog(LOG, "Master resource manager sets segment %s(%d)'s status "
+							  "to %c",
+							  GET_SEGRESOURCE_HOSTNAME(segresource),
+							  segid,
+							  segstat->FTSAvailable == RESOURCE_SEG_STATUS_AVAILABLE ?
+										SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN);
 				}
-
-				setSegResHAWQAvailability(segresource, segstat->FTSAvailable);
-				/*
-				 * Segment is set from up to down, return resource.
-				 */
-				if (oldStatus == RESOURCE_SEG_STATUS_AVAILABLE)
-				{
-					*capstatchanged = true;
-					returnAllGRMResourceFromSegment(segresource);
-				}
-
-				elog(LOG, "Master resource manager sets segment %s(%d)'s status "
-						  "to %c",
-						  GET_SEGRESOURCE_HOSTNAME(segresource),
-						  segid,
-						  segstat->FTSAvailable == RESOURCE_SEG_STATUS_AVAILABLE ?
-									SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN);
 			}
 			else
 			{
