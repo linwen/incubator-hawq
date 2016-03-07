@@ -702,7 +702,7 @@ int handleRB2RM_ClusterReport(void)
 				/*
 				 * This segment is FTS unavailable, now GRM is available
 				 */
-				if (segres->Stat->StatusDesc & SEG_STATUS_NO_YARN_NODE_REPORT != 0)
+				if ((segres->Stat->StatusDesc & SEG_STATUS_NO_YARN_NODE_REPORT) != 0)
 				{
 					statusDescChange = true;
 					segres->Stat->StatusDesc &= ~SEG_STATUS_NO_YARN_NODE_REPORT;
@@ -738,7 +738,7 @@ int handleRB2RM_ClusterReport(void)
 			}
 			else
 			{
-				if (segres->Stat->StatusDesc & SEG_STATUS_NO_YARN_NODE_REPORT == 0)
+				if ((segres->Stat->StatusDesc & SEG_STATUS_NO_YARN_NODE_REPORT) == 0)
 				{
 					segres->Stat->StatusDesc |= SEG_STATUS_NO_YARN_NODE_REPORT;
 					statusDescChange = true;
@@ -751,7 +751,7 @@ int handleRB2RM_ClusterReport(void)
 			SimpStringPtr description = build_segment_status_description(segres->Stat);
 			update_segment_status(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 									IS_SEGSTAT_FTSAVAILABLE(segres->Stat),
-									 (description.Len > 0)?description.Str:"");
+									 (description->Len > 0)?description->Str:"");
 			/*add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 									GET_SEGRESOURCE_HOSTNAME(segres),
 									SEG_STATUS_CHANGE_UP_YARN_NODE_REPORT);*/
@@ -761,9 +761,12 @@ int handleRB2RM_ClusterReport(void)
 						GET_SEGRESOURCE_HOSTNAME(segres)
 						IS_SEGSTAT_FTSAVAILABLE(segres->Stat) ?
 							SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN,
-						(description.Len > 0)?description.Str:"");
-			freeSimpleStringContent(description);
-			rm_pfree(PCONTEXT, description);
+						(description->Len > 0)?description->Str:"");
+			if (description != NULL)
+			{
+				freeSimpleStringContent(description);
+				rm_pfree(PCONTEXT, description);
+			}
 		}
 		//segres->Stat->StatusReason = SEG_STATUS_CHANGE_UP_YARN_NODE_REPORT;
 		/*elog(RMLOG, "Resource manager gets node(%s) information "

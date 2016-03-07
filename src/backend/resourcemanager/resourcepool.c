@@ -1099,13 +1099,16 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 									SEGMENT_ROLE_PRIMARY,
 									IS_SEGSTAT_FTSAVAILABLE(segresource->Stat) ?
 										SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN,
-									(description.Len > 0)?description.Str:"");
+									(description->Len > 0)?description->Str:"");
 			/*add_segment_history_row(segid+REGISTRATION_ORDER_OFFSET,
 									hostname,
 									segresource->Stat->StatusDesc);
 			*/
-			freeSimpleStringContent(description);
-			rm_pfree(PCONTEXT, description);
+			if (description != NULL)
+			{
+				freeSimpleStringContent(description);
+				rm_pfree(PCONTEXT, description);
+			}
 		}
 
 		if (segresource->Stat->FTSAvailable == RESOURCE_SEG_STATUS_AVAILABLE)
@@ -1171,8 +1174,8 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 		 */
 		if ((segresource->Stat->StatusDesc & SEG_STATUS_HEARTBEAT_TIMEOUT) != 0)
 			segresource->Stat->StatusDesc &= ~SEG_STATUS_HEARTBEAT_TIMEOUT;
-		if ((segresource->Stat->StatusDesc & SEG_STATUS_HEARTBEAT_RUALIVE_FAILED) != 0)
-			segresource->Stat->StatusDesc &= ~SEG_STATUS_HEARTBEAT_RUALIVE_FAILED;
+		if ((segresource->Stat->StatusDesc & SEG_STATUS_RUALIVE_FAILED) != 0)
+			segresource->Stat->StatusDesc &= ~SEG_STATUS_RUALIVE_FAILED;
 		if ((segresource->Stat->StatusDesc & SEG_STATUS_COMMUNICATION_ERROR) != 0)
 			segresource->Stat->StatusDesc &= ~SEG_STATUS_COMMUNICATION_ERROR;
 
@@ -1279,12 +1282,15 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 				update_segment_status(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
 										IS_SEGSTAT_FTSAVAILABLE(segresource->Stat) ?
 																SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN,
-										(description.Len > 0)?description.Str:"");
+										(description->Len > 0)?description->Str:"");
 				/*add_segment_history_row(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
 										GET_SEGRESOURCE_HOSTNAME(segresource),
 										segresource->Stat->StatusDesc);*/
-				freeSimpleStringContent(description);
-				rm_pfree(PCONTEXT, description);
+				if (description != NULL)
+				{
+					freeSimpleStringContent(description);
+					rm_pfree(PCONTEXT, description);
+				}
 			}
 		}
 
@@ -5082,8 +5088,8 @@ SimpStringPtr build_segment_status_description(SegStat segstat)
 			{
 				appendSelfMaintainBuffer(&buf, ":", 1);
 				appendSelfMaintainBuffer(&buf,
-										 GET_SEGINFO_FAILEDTMPDIR(segstat->Info),
-										 strlen(GET_SEGINFO_FAILEDTMPDIR(segstat->Info)));
+										 GET_SEGINFO_FAILEDTMPDIR(segstat.Info),
+										 strlen(GET_SEGINFO_FAILEDTMPDIR(segstat.Info)));
 			}
 			if (idx != sizeof(SegStatusDesc)/sizeof(char*) -1)
 			{

@@ -2644,8 +2644,11 @@ void updateStatusOfAllNodes()
 				/*add_segment_history_row(idx + REGISTRATION_ORDER_OFFSET,
 										GET_SEGRESOURCE_HOSTNAME(node),
 										SEG_STATUS_CHANGE_DOWN_TIMEOUT);*/
-				freeSimpleStringContent(description);
-				rm_pfree(PCONTEXT, description);
+				if (description != NULL)
+				{
+					freeSimpleStringContent(description);
+					rm_pfree(PCONTEXT, description);
+				}
 			}
 
 			elog(WARNING, "Resource manager sets host %s from up to down.",
