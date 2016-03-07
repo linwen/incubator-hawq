@@ -693,59 +693,82 @@ int handleRB2RM_ClusterReport(void)
 	foreach(cell, allsegres)
 	{
 		SegResource segres = (SegResource)(((PAIR)lfirst(cell))->Value);
+		bool statusDescChange = false;
 
-		if(IS_SEGSTAT_FTSAVAILABLE(segres->Stat) &&
-			!IS_SEGSTAT_GRMAVAILABLE(segres->Stat))
+		if(IS_SEGSTAT_GRMAVAILABLE(segres->Stat))
 		{
-			/*
-			 * This segment is FTS available, but GRM is unavailable(maybe
-			 * master hasn't get a cluster report for it from YARN).
-			 * Mark this segment as DOWN in gp_segment_configuration table
-			 * and add an entry in gp_configuration_history
-			 */
-			setSegStatHAWQAvailability(segres->Stat, RESOURCE_SEG_STATUS_UNAVAILABLE);
-			if (Gp_role != GP_ROLE_UTILITY)
+			if (!IS_SEGSTAT_FTSAVAILABLE(segres->Stat))
 			{
-				update_segment_status(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
-										SEGMENT_STATUS_DOWN);
-				add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
-										GET_SEGRESOURCE_HOSTNAME(segres),
-										SEG_STATUS_CHANGE_DOWN_NO_YARN_NODE_REPORT);
+				/*
+				 * This segment is FTS unavailable, now GRM is available
+				 */
+				if (segres->Stat->StatusDesc & SEG_STATUS_NO_YARN_NODE_REPORT != 0)
+				{
+					statusDescChange = true;
+					segres->Stat->StatusDesc &= ~SEG_STATUS_NO_YARN_NODE_REPORT;
+				}
+
+				/*
+				 * Get node report for this segment, and there is no other
+				 * DOWN flag, then mark this segment to UP.
+				 */
+				if (segres->Stat->StatusDesc == 0)
+				{
+					setSegStatHAWQAvailability(segres->Stat, RESOURCE_SEG_STATUS_AVAILABLE);
+					statusDescChange = true;
+				}
 			}
-			segres->Stat->StatusReason = SEG_STATUS_CHANGE_DOWN_NO_YARN_NODE_REPORT;
-			elog(RMLOG, "Resource manager hasn't get node(%s) information "
-						"from Yarn cluster report, mark it to DOWN.",
-						GET_SEGRESOURCE_HOSTNAME(segres));
-		}
-		else if(!IS_SEGSTAT_FTSAVAILABLE(segres->Stat) &&
-				segres->Stat->StatusReason == SEG_STATUS_CHANGE_DOWN_NO_YARN_NODE_REPORT &&
-				IS_SEGSTAT_GRMAVAILABLE(segres->Stat))
-		{
-			/*
-			 * This segment is FTS unavailable, and the reason
-			 * is because master hasn't get a cluster report for it from YARN.
-			 * Now it is GRM available, so mark it UP in gp_segment_configuration table
-			 * and add an entry in gp_configuration_history
-			 */
-			setSegStatHAWQAvailability(segres->Stat, RESOURCE_SEG_STATUS_AVAILABLE);
-			if (Gp_role != GP_ROLE_UTILITY)
+			else
 			{
-				update_segment_status(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
-										SEGMENT_STATUS_UP);
-				add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
-										GET_SEGRESOURCE_HOSTNAME(segres),
-										SEG_STATUS_CHANGE_UP_YARN_NODE_REPORT);
+				Assert(segres->Stat->StatusDesc == 0);
 			}
-			segres->Stat->StatusReason = SEG_STATUS_CHANGE_UP_YARN_NODE_REPORT;
-			elog(RMLOG, "Resource manager gets node(%s) information "
-						"from Yarn cluster report, mark it to UP.",
-						GET_SEGRESOURCE_HOSTNAME(segres));
 		}
 		else
 		{
-			/* skip the other status change */
-			continue;
+			if (IS_SEGSTAT_FTSAVAILABLE(segres->Stat))
+			{
+				/*
+				 * This segment is FTS available, now GRM is unavailable
+				 * set this segment to DOWN.
+				 */
+				Assert(segres->Stat->StatusDesc == 0);
+				setSegStatHAWQAvailability(segres->Stat, RESOURCE_SEG_STATUS_UNAVAILABLE);
+				segres->Stat->StatusDesc |= SEG_STATUS_NO_YARN_NODE_REPORT;
+				statusDescChange = true;
+			}
+			else
+			{
+				if (segres->Stat->StatusDesc & SEG_STATUS_NO_YARN_NODE_REPORT == 0)
+				{
+					segres->Stat->StatusDesc |= SEG_STATUS_NO_YARN_NODE_REPORT;
+					statusDescChange = true;
+				}
+			}
 		}
+
+		if (statusDescChange && Gp_role != GP_ROLE_UTILITY)
+		{
+			SimpStringPtr description = build_segment_status_description(segres->Stat);
+			update_segment_status(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
+									IS_SEGSTAT_FTSAVAILABLE(segres->Stat),
+									 (description.Len > 0)?description.Str:"");
+			/*add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
+									GET_SEGRESOURCE_HOSTNAME(segres),
+									SEG_STATUS_CHANGE_UP_YARN_NODE_REPORT);*/
+
+			elog(RMLOG, "Resource manager update node(%s) information "
+						"status:%s, description:%s",
+						GET_SEGRESOURCE_HOSTNAME(segres)
+						IS_SEGSTAT_FTSAVAILABLE(segres->Stat) ?
+							SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN,
+						(description.Len > 0)?description.Str:"");
+			freeSimpleStringContent(description);
+			rm_pfree(PCONTEXT, description);
+		}
+		//segres->Stat->StatusReason = SEG_STATUS_CHANGE_UP_YARN_NODE_REPORT;
+		/*elog(RMLOG, "Resource manager gets node(%s) information "
+					"from Yarn cluster report, mark it to UP.",
+					GET_SEGRESOURCE_HOSTNAME(segres));*/
 	}
 	freePAIRRefList(&(PRESPOOL->Segments), &allsegres);
 

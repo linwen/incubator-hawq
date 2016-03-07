@@ -2634,12 +2634,18 @@ void updateStatusOfAllNodes()
 			 * This call makes resource pool remove unused containers.
 			 */
 			returnAllGRMResourceFromSegment(node);
+			node->Stat->StatusDesc |= SEG_STATUS_HEARTBEAT_TIMEOUT;
 			if (Gp_role != GP_ROLE_UTILITY)
 			{
-				update_segment_status(idx + REGISTRATION_ORDER_OFFSET, SEGMENT_STATUS_DOWN);
-				add_segment_history_row(idx + REGISTRATION_ORDER_OFFSET,
+				SimpStringPtr description = build_segment_status_description(node->Stat);
+				update_segment_status(idx + REGISTRATION_ORDER_OFFSET,
+										SEGMENT_STATUS_DOWN,
+										(description.Len > 0)?description.Str:"");
+				/*add_segment_history_row(idx + REGISTRATION_ORDER_OFFSET,
 										GET_SEGRESOURCE_HOSTNAME(node),
-										SEG_STATUS_CHANGE_DOWN_TIMEOUT);
+										SEG_STATUS_CHANGE_DOWN_TIMEOUT);*/
+				freeSimpleStringContent(description);
+				rm_pfree(PCONTEXT, description);
 			}
 
 			elog(WARNING, "Resource manager sets host %s from up to down.",

@@ -766,6 +766,7 @@ bool handleRMSEGRequestIMAlive(void **arg)
 	newsegstat->FailedTmpDirNum  = header->TmpDirBrokenCount;
 	newsegstat->RMStartTimestamp = header->RMStartTimestamp;
 
+#if 0
 	/*
 	 * Check if the there is any failed temporary directory on this segment.
 	 * if has, master considers this segment as down, even it has heart-beat report.
@@ -782,6 +783,7 @@ bool handleRMSEGRequestIMAlive(void **arg)
 					newsegstat->FailedTmpDirNum);
 		newsegstat->FTSAvailable = RESOURCE_SEG_STATUS_UNAVAILABLE;
 	}
+#endif
 
 	bool capstatchanged = false;
 	if ( addHAWQSegWithSegStat(newsegstat, &capstatchanged) != FUNC_RETURN_OK )
@@ -1033,13 +1035,18 @@ bool handleRMRequestSegmentIsDown(void **arg)
 					/* Make resource pool remove unused containers */
 					returnAllGRMResourceFromSegment(segres);
 					/* Set the host down in gp_segment_configuration table */
+					segres->Stat->StatusDesc |= SEG_STATUS_RUALIVE_FAILED;
 					if (Gp_role != GP_ROLE_UTILITY)
 					{
+						SimpStringPtr description = build_segment_status_description(segres->Stat);
 						update_segment_status(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
-											  SEGMENT_STATUS_DOWN);
-						add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
+											  SEGMENT_STATUS_DOWN,
+											  (description.Len > 0)?description.Str:""));
+						/*add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 												hostname,
-												SEG_STATUS_CHANGE_DOWN_RUALIVE_FAILED);
+												SEG_STATUS_CHANGE_DOWN_RUALIVE_FAILED);*/
+						freeSimpleStringContent(description);
+						rm_pfree(PCONTEXT, description);
 					}
 
 					/* Set the host down. */

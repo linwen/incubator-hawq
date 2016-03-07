@@ -232,14 +232,20 @@ void receivedRUAliveResponse(AsyncCommMessageHandlerContext  context,
 			 * This call makes resource pool remove unused containers.
 			 */
 			returnAllGRMResourceFromSegment(segres);
+
+			segres->Stat->StatusDesc |= SEG_STATUS_RUALIVE_FAILED;
 			/* Set the host down in gp_segment_configuration table */
 			if (Gp_role != GP_ROLE_UTILITY)
 			{
+				SimpStringPtr description = build_segment_status_description(segres->Stat);
 				update_segment_status(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
-									  SEGMENT_STATUS_DOWN);
-				add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
+									  SEGMENT_STATUS_DOWN,
+									  (description.Len > 0)?description.Str:"");
+				/*add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 										GET_SEGRESOURCE_HOSTNAME(segres),
-										SEG_STATUS_CHANGE_DOWN_RUALIVE_FAILED);
+										SEG_STATUS_CHANGE_DOWN_RUALIVE_FAILED);*/
+				freeSimpleStringContent(description);
+				rm_pfree(PCONTEXT, description);
 			}
 			/* Set the host down. */
 			elog(WARNING, "Resource manager sets host %s from up to down "
@@ -286,13 +292,19 @@ void sentRUAliveError(AsyncCommMessageHandlerContext context)
 		 * This call makes resource pool remove unused containers.
 		 */
 		returnAllGRMResourceFromSegment(segres);
+		segres->Stat->StatusDesc |= SEG_STATUS_COMMUNICATION_ERROR;
 		/* Set the host down in gp_segment_configuration table */
 		if (Gp_role != GP_ROLE_UTILITY)
 		{
-			update_segment_status(segres->Stat->ID + REGISTRATION_ORDER_OFFSET, SEGMENT_STATUS_DOWN);
-			add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
+			SimpStringPtr description = build_segment_status_description(segres->Stat);
+			update_segment_status(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
+								  SEGMENT_STATUS_DOWN,
+								  (description.Len > 0)?description.Str:"");
+			/*add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 									GET_SEGRESOURCE_HOSTNAME(segres),
-									SEG_STATUS_CHANGE_DOWN_COMMUNICATION_ERROR);
+									SEG_STATUS_CHANGE_DOWN_COMMUNICATION_ERROR);*/
+			freeSimpleStringContent(description);
+			rm_pfree(PCONTEXT, description);
 		}
 		/* Set the host down. */
 		elog(LOG, "Resource manager sets host %s from up to down "
