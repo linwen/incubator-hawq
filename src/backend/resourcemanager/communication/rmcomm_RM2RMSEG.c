@@ -302,7 +302,7 @@ void sentRUAliveError(AsyncCommMessageHandlerContext context)
 			SimpStringPtr description = build_segment_status_description(segres->Stat);
 			update_segment_status(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 								  SEGMENT_STATUS_DOWN,
-								  (description.Len > 0)?description.Str:"");
+								  (description->Len > 0)?description->Str:"");
 			/*add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 									GET_SEGRESOURCE_HOSTNAME(segres),
 									SEG_STATUS_CHANGE_DOWN_COMMUNICATION_ERROR);*/

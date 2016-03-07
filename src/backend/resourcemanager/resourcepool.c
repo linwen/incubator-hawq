@@ -5088,8 +5088,8 @@ SimpStringPtr build_segment_status_description(SegStat segstat)
 			{
 				appendSelfMaintainBuffer(&buf, ":", 1);
 				appendSelfMaintainBuffer(&buf,
-										 GET_SEGINFO_FAILEDTMPDIR(segstat->Info),
-										 strlen(GET_SEGINFO_FAILEDTMPDIR(segstat->Info)));
+										 GET_SEGINFO_FAILEDTMPDIR(&segstat->Info),
+										 strlen(GET_SEGINFO_FAILEDTMPDIR(&segstat->Info)));
 			}
 			if (idx != sizeof(SegStatusDesc)/sizeof(char*) -1)
 			{
