@@ -486,7 +486,6 @@ int ResManagerMainServer2ndPhase(void)
                            PostPortNumber,
                            SEGMENT_ROLE_MASTER_CONFIG,
                            SEGMENT_STATUS_UP,
-                           0,
                            "");
 
 	/* Load queue and user definition as no DDL now. */
@@ -2640,7 +2639,7 @@ void updateStatusOfAllNodes()
 				SimpStringPtr description = build_segment_status_description(node->Stat);
 				update_segment_status(idx + REGISTRATION_ORDER_OFFSET,
 										SEGMENT_STATUS_DOWN,
-										(description.Len > 0)?description.Str:"");
+										(description->Len > 0)?description->Str:"");
 				/*add_segment_history_row(idx + REGISTRATION_ORDER_OFFSET,
 										GET_SEGRESOURCE_HOSTNAME(node),
 										SEG_STATUS_CHANGE_DOWN_TIMEOUT);*/

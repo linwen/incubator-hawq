@@ -650,7 +650,7 @@ static const char* SegStatusChangeReasonDesc[] = {
  *  status : indicates the status of this segment, UP or DOWN
  *  reason : reason of status change
  */
-void add_segment_history_row(int32_t id, char* hostname, bool status, int reason)
+void add_segment_history_row(int32_t id, char* hostname, uint8_t status, int reason)
 {
 	int	libpqres = CONNECTION_OK;
 	PGconn *conn = NULL;
@@ -1278,7 +1278,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 			 */
 			if (Gp_role != GP_ROLE_UTILITY)
 			{
-				SimpStringPtr description = build_segment_status_description(segresource);
+				SimpStringPtr description = build_segment_status_description(segresource->Stat);
 				update_segment_status(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
 										IS_SEGSTAT_FTSAVAILABLE(segresource->Stat) ?
 																SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN,
