@@ -758,7 +758,7 @@ int handleRB2RM_ClusterReport(void)
 
 			elog(RMLOG, "Resource manager update node(%s) information "
 						"status:%s, description:%s",
-						GET_SEGRESOURCE_HOSTNAME(segres)
+						GET_SEGRESOURCE_HOSTNAME(segres),
 						IS_SEGSTAT_FTSAVAILABLE(segres->Stat) ?
 							SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN,
 						(description->Len > 0)?description->Str:"");
