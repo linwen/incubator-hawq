@@ -594,8 +594,9 @@ void update_segment_status(int32_t id, char status, char* description)
 	PQclear(result);
 
 	sql = createPQExpBuffer();
-	appendPQExpBuffer(sql,"UPDATE gp_segment_configuration SET status='%c' WHERE registration_order=%d",
-						   status, id);
+	appendPQExpBuffer(sql, "UPDATE gp_segment_configuration SET status='%c', "
+						   "description='%s' WHERE registration_order=%d",
+						   status, description, id);
 	result = PQexec(conn, sql->data);
 	if (!result || PQresultStatus(result) != PGRES_COMMAND_OK)
 	{
