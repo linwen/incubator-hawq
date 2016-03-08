@@ -617,9 +617,10 @@ void update_segment_status(int32_t id, char status, char* description)
 		goto cleanup;
 	}
 
-	elog(LOG, "Update a segment's status to '%c' in segment configuration catalog table,"
-			  "registration_order : %d",
-			  status, id);
+	elog(LOG, "Update a segment(registration_order:%d)'s status to '%c',"
+			  "description to '%s', "
+			  "in segment configuration catalog table,",
+			  id, status, description);
 
 cleanup:
 	if(sql)
@@ -1170,7 +1171,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 			segresource->Stat->StatusDesc |= SEG_STATUS_RM_RESET;
 			segresource->Stat->RMStartTimestamp = segstat->RMStartTimestamp;
 			elog(LOG, "Master RM finds segment:%s 's RM process has restarted. "
-					  "old status:%d, new status:%d",
+					  "old status:%d",
 					  GET_SEGRESOURCE_HOSTNAME(segresource),
 					  oldStatus);
 		}
@@ -5072,6 +5073,8 @@ SimpStringPtr build_segment_status_description(SegStat segstat)
 	SelfMaintainBufferData buf;
 	initializeSelfMaintainBuffer(&buf, PCONTEXT);
 
+	elog(LOG, "build_segment_status_description, StatusDesc:%d", segstat->StatusDesc);
+
 	if (segstat->StatusDesc == 0)
 		goto _exit;
 
@@ -5080,6 +5083,7 @@ SimpStringPtr build_segment_status_description(SegStat segstat)
 		if ((segstat->StatusDesc & 1<<idx) != 0)
 		{
 			appendSelfMaintainBuffer(&buf, SegStatusDesc[idx], strlen(SegStatusDesc[idx]));
+			elog(LOG, "build_segment_status_description, append %s:", SegStatusDesc[idx]);
 			if (1<<idx == SEG_STATUS_FAILED_TMPDIR)
 			{
 				appendSelfMaintainBuffer(&buf, ":", 1);
@@ -5087,7 +5091,7 @@ SimpStringPtr build_segment_status_description(SegStat segstat)
 										 GET_SEGINFO_FAILEDTMPDIR(&segstat->Info),
 										 strlen(GET_SEGINFO_FAILEDTMPDIR(&segstat->Info)));
 			}
-			if (idx != sizeof(SegStatusDesc)/sizeof(char*) -1)
+			if (idx != sizeof(SegStatusDesc)/sizeof(char*) - 1)
 			{
 				appendSelfMaintainBuffer(&buf, ";", 1);
 			}
