@@ -1183,8 +1183,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 		}
 
 		/*
-		 * If temporary directory path is changed,
-		 * update SegStatData
+		 * If temporary directory path is changed, update SegStatData
 		 */
 		bool tmpDirChanged = false;
 		if (segresource->Stat->FailedTmpDirNum != segstat->FailedTmpDirNum ||
@@ -5065,7 +5064,7 @@ static const char* SegStatusDesc[] = {
 	"communication error",
 	"failed temporary directory",
 	"resource manager process was reset",
-	"no Yarn node report"
+	"no YARN node report"
 };
 
 /*

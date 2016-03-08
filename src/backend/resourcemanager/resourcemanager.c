@@ -2618,21 +2618,29 @@ void updateStatusOfAllNodes()
 	curtime = gettime_microsec();
 	for(uint32_t idx = 0; idx < PRESPOOL->SegmentIDCounter; idx++)
 	{
-	    node = getSegResource(idx);
-        if (node != NULL &&
-            (curtime - node->LastUpdateTime >
+		node = getSegResource(idx);
+		uint8_t oldStatus = node->Stat->FTSAvailable;
+		if (node != NULL &&
+			 RESOURCE_SEG_STATUS_UNAVAILABLE(curtime - node->LastUpdateTime >
 			 1000000LL * rm_segment_heartbeat_timeout) &&
-			IS_SEGSTAT_FTSAVAILABLE(node->Stat) )
+			 (node->Stat->StatusDesc & SEG_STATUS_HEARTBEAT_TIMEOUT == 0))
 		{
 			/*
 			 * This call makes resource manager able to adjust queue and mem/core
 			 * trackers' capacity.
 			 */
-			setSegResHAWQAvailability(node, RESOURCE_SEG_STATUS_UNAVAILABLE);
-			/*
-			 * This call makes resource pool remove unused containers.
-			 */
-			returnAllGRMResourceFromSegment(node);
+			if (oldStatus == RESOURCE_SEG_STATUS_AVAILABLE)
+			{
+				setSegResHAWQAvailability(node, RESOURCE_SEG_STATUS_UNAVAILABLE);
+				/*
+				 * This call makes resource pool remove unused containers.
+				 */
+				returnAllGRMResourceFromSegment(node);
+				elog(WARNING, "Resource manager sets host %s from up to down.",
+							  GET_SEGRESOURCE_HOSTNAME(node));
+				changedstatus = true;
+			}
+
 			node->Stat->StatusDesc |= SEG_STATUS_HEARTBEAT_TIMEOUT;
 			if (Gp_role != GP_ROLE_UTILITY)
 			{
@@ -2649,11 +2657,6 @@ void updateStatusOfAllNodes()
 					rm_pfree(PCONTEXT, description);
 				}
 			}
-
-			elog(WARNING, "Resource manager sets host %s from up to down.",
-						  GET_SEGRESOURCE_HOSTNAME(node));
-
-			changedstatus = true;
 		}
 	}
 
