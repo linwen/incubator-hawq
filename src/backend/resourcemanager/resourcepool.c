@@ -1204,13 +1204,6 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 						GET_SEGINFO_FAILEDTMPDIR(&segstat->Info)) != 0)
 			{
 				tmpDirChanged = true;
-				elog(LOG, "Resource manager finds segment %s(%d) 's "
-						  "failed temporary directory is changed from "
-						  "'%s' to '%s'",
-						  GET_SEGRESOURCE_HOSTNAME(segresource),
-						  segid,
-						  GET_SEGINFO_FAILEDTMPDIR(&segresource->Stat->Info),
-						  GET_SEGINFO_FAILEDTMPDIR(&segstat->Info));
 			}
 		}
 
@@ -1272,6 +1265,13 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 			}
 			segresource->Stat->Info.FailedTmpDirLen = segstat->Info.FailedTmpDirLen;
 			segresource->Stat->FailedTmpDirNum = segstat->FailedTmpDirNum;
+
+			elog(LOG, "Resource manager change segment %s(%d) 's "
+					  "failed temporary directory is changed from '%s'",
+					  GET_SEGRESOURCE_HOSTNAME(segresource),
+					  segid,
+					  segresource->Stat->FailedTmpDirNum == 0 ?
+						"" : GET_SEGINFO_FAILEDTMPDIR(&segresource->Stat->Info));
 		}
 
 		/* Set or clear failed temporary directory flag */
