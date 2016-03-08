@@ -1193,13 +1193,29 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 		 * If temporary directory path is changed, update SegStatData
 		 */
 		bool tmpDirChanged = false;
-		if (segresource->Stat->FailedTmpDirNum != segstat->FailedTmpDirNum ||
-			((segresource->Stat->FailedTmpDirNum == segstat->FailedTmpDirNum) &&
-			(segresource->Stat->FailedTmpDirNum != 0) &&
-			(strcmp(GET_SEGINFO_FAILEDTMPDIR(&segresource->Stat->Info),
-					GET_SEGINFO_FAILEDTMPDIR(&segstat->Info)) != 0)))
+		if (segresource->Stat->FailedTmpDirNum != segstat->FailedTmpDirNum)
 		{
 			tmpDirChanged = true;
+		}
+
+		if (!tmpDirChanged && segresource->Stat->FailedTmpDirNum != 0)
+		{
+			if (strcmp(GET_SEGINFO_FAILEDTMPDIR(&segresource->Stat->Info),
+						GET_SEGINFO_FAILEDTMPDIR(&segstat->Info)) != 0)
+			{
+				tmpDirChanged = true;
+				elog(LOG, "Resource manager finds segment %s(%d) 's "
+						  "failed temporary directory is changed from "
+						  "'%s' to '%s'",
+						  GET_SEGRESOURCE_HOSTNAME(segresource),
+						  segid,
+						  GET_SEGINFO_FAILEDTMPDIR(&segresource->Stat->Info),
+						  GET_SEGINFO_FAILEDTMPDIR(&segstat->Info));
+			}
+		}
+
+		if (tmpDirChanged)
+		{
 			elog(LOG, "Resource manager finds segment %s(%d) 's "
 					  "failed temporary directory is changed from "
 					  "'%s' to '%s'",
