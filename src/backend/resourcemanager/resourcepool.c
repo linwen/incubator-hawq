@@ -1140,11 +1140,9 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 
 		/*
 		 * When get a heartbeat from a segment,
-		 * clear heartbeat timeout flag, communication error flag,
+		 * clear communication error flag,
 		 * RUALIVE failed flag, RM reset flag in StatusDesc
 		 */
-		if ((segresource->Stat->StatusDesc & SEG_STATUS_HEARTBEAT_TIMEOUT) != 0)
-			segresource->Stat->StatusDesc &= ~SEG_STATUS_HEARTBEAT_TIMEOUT;
 		if ((segresource->Stat->StatusDesc & SEG_STATUS_RUALIVE_FAILED) != 0)
 			segresource->Stat->StatusDesc &= ~SEG_STATUS_RUALIVE_FAILED;
 		if ((segresource->Stat->StatusDesc & SEG_STATUS_COMMUNICATION_ERROR) != 0)
@@ -1169,12 +1167,23 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 			 * This segment's RM process has restarted,
 			 * we should clean up old status and mark it down.
 			 */
-			segresource->Stat->StatusDesc |= SEG_STATUS_RM_RESET;
-			segresource->Stat->RMStartTimestamp = segstat->RMStartTimestamp;
-			elog(LOG, "Master RM finds segment:%s 's RM process has restarted. "
-					  "old status:%d",
-					  GET_SEGRESOURCE_HOSTNAME(segresource),
-					  oldStatus);
+			if ((segresource->Stat->StatusDesc & SEG_STATUS_HEARTBEAT_TIMEOUT) == 0) {
+				segresource->Stat->StatusDesc |= SEG_STATUS_RM_RESET;
+				segresource->Stat->RMStartTimestamp = segstat->RMStartTimestamp;
+				elog(LOG, "Master RM finds segment:%s 's RM process has restarted. "
+						  "old status:%d",
+						  GET_SEGRESOURCE_HOSTNAME(segresource),
+						  oldStatus);
+			}
+		}
+		else
+		{
+			/* Due to some reason, this segment is set heartbeat timeout,
+			 * Now master gets a heartbeat and this segment 's RM process timestamp
+			 * remains same, clear timeout flag
+			 */
+			if ((segresource->Stat->StatusDesc & SEG_STATUS_HEARTBEAT_TIMEOUT) != 0)
+				segresource->Stat->StatusDesc &= ~SEG_STATUS_HEARTBEAT_TIMEOUT;
 		}
 
 		/*
@@ -5074,8 +5083,6 @@ SimpStringPtr build_segment_status_description(SegStat segstat)
 	SelfMaintainBufferData buf;
 	initializeSelfMaintainBuffer(&buf, PCONTEXT);
 
-	elog(LOG, "build_segment_status_description, StatusDesc:%d", segstat->StatusDesc);
-
 	if (segstat->StatusDesc == 0)
 		goto _exit;
 
@@ -5084,7 +5091,6 @@ SimpStringPtr build_segment_status_description(SegStat segstat)
 		if ((segstat->StatusDesc & 1<<idx) != 0)
 		{
 			appendSelfMaintainBuffer(&buf, SegStatusDesc[idx], strlen(SegStatusDesc[idx]));
-			elog(LOG, "build_segment_status_description, append %s:", SegStatusDesc[idx]);
 			if (1<<idx == SEG_STATUS_FAILED_TMPDIR)
 			{
 				appendSelfMaintainBuffer(&buf, ":", 1);
@@ -5092,10 +5098,7 @@ SimpStringPtr build_segment_status_description(SegStat segstat)
 										 GET_SEGINFO_FAILEDTMPDIR(&segstat->Info),
 										 strlen(GET_SEGINFO_FAILEDTMPDIR(&segstat->Info)));
 			}
-			if (idx != sizeof(SegStatusDesc)/sizeof(char*) - 1)
-			{
-				appendSelfMaintainBuffer(&buf, ";", 1);
-			}
+			appendSelfMaintainBuffer(&buf, ";", 1);
 		}
 	}
 
