@@ -1131,9 +1131,9 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 	 */
 	else {
 		//reason = SEG_STATUS_CHANGE_UP_GET_HEARTBEAT;
-		uint32_t oldStatusDesc = segresource->Stat->StatusDesc;
 		segresource = getSegResource(segid);
 		Assert(segresource != NULL);
+		uint32_t oldStatusDesc = segresource->Stat->StatusDesc;
 		uint8_t oldStatus = segresource->Stat->FTSAvailable;
 		// bool statusChanged = oldStatus != segstat->FTSAvailable;
 		// bool reasonChanged = false;
