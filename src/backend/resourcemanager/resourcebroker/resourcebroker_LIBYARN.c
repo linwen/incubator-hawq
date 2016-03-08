@@ -750,7 +750,8 @@ int handleRB2RM_ClusterReport(void)
 		{
 			SimpStringPtr description = build_segment_status_description(segres->Stat);
 			update_segment_status(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
-									IS_SEGSTAT_FTSAVAILABLE(segres->Stat),
+									IS_SEGSTAT_FTSAVAILABLE(segres->Stat) ?
+										SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN,
 									 (description->Len > 0)?description->Str:"");
 			/*add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 									GET_SEGRESOURCE_HOSTNAME(segres),
