@@ -1139,51 +1139,47 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 		uint8_t oldStatus = segresource->Stat->FTSAvailable;
 
 		/*
-		 * When get a heartbeat from a segment,
-		 * clear communication error flag,
-		 * RUALIVE failed flag, RM reset flag in StatusDesc
-		 */
-		if ((segresource->Stat->StatusDesc & SEG_STATUS_RUALIVE_FAILED) != 0)
-			segresource->Stat->StatusDesc &= ~SEG_STATUS_RUALIVE_FAILED;
-		if ((segresource->Stat->StatusDesc & SEG_STATUS_COMMUNICATION_ERROR) != 0)
-			segresource->Stat->StatusDesc &= ~SEG_STATUS_COMMUNICATION_ERROR;
-		if ((segresource->Stat->StatusDesc & SEG_STATUS_RM_RESET) != 0)
-			segresource->Stat->StatusDesc &= ~SEG_STATUS_RM_RESET;
-
-		// bool statusChanged = oldStatus != segstat->FTSAvailable;
-		// bool reasonChanged = false;
-
-		/*
-		 * Check if RM process is restarted in this segment.
 		 * If the latest reported RM process startup timestamp doesn't
 		 * match the previous, master RM consider segment's RM process
 		 * has restarted.
 		 * In rare case, the system's time is reset and segment's RM process
 		 * happen to get a same timestamp with previous one.
 		 */
-		if (segresource->Stat->RMStartTimestamp != segstat->RMStartTimestamp)
+		if (segresource->Stat->RMStartTimestamp != segstat->RMStartTimestamp &&
+				(segresource->Stat->StatusDesc & SEG_STATUS_HEARTBEAT_TIMEOUT) == 0 &&
+				(segresource->Stat->StatusDesc & SEG_STATUS_COMMUNICATION_ERROR) == 0 &&
+				(segresource->Stat->StatusDesc & SEG_STATUS_RUALIVE_FAILED) != 0)
 		{
 			/*
-			 * This segment's RM process has restarted,
-			 * we should clean up old status and mark it down.
+			 * This segment's RM process has restarted.
+			 * if StatusDesc doesn't have heartbeat timeout flag, or communication error,
+			 * or RUAlive failed flag, this segment is set to DOWN.
+			 * It will be set to UP when reports a new heartbeat.
 			 */
-			if ((segresource->Stat->StatusDesc & SEG_STATUS_HEARTBEAT_TIMEOUT) == 0) {
-				segresource->Stat->StatusDesc |= SEG_STATUS_RM_RESET;
-				segresource->Stat->RMStartTimestamp = segstat->RMStartTimestamp;
-				elog(LOG, "Master RM finds segment:%s 's RM process has restarted. "
-						  "old status:%d",
-						  GET_SEGRESOURCE_HOSTNAME(segresource),
-						  oldStatus);
-			}
+			segresource->Stat->StatusDesc |= SEG_STATUS_RM_RESET;
+			segresource->Stat->RMStartTimestamp = segstat->RMStartTimestamp;
+			elog(LOG, "Master RM finds segment:%s 's RM process has restarted. "
+					  "old status:%d",
+					  GET_SEGRESOURCE_HOSTNAME(segresource),
+					  oldStatus);
 		}
 		else
 		{
-			/* Due to some reason, this segment is set heartbeat timeout,
-			 * Now master gets a heartbeat and this segment 's RM process timestamp
-			 * remains same, clear timeout flag
+			if (segresource->Stat->RMStartTimestamp != segstat->RMStartTimestamp)
+			{
+				segresource->Stat->RMStartTimestamp = segstat->RMStartTimestamp;
+			}
+			/*
+			 * Now clear timeout flag, RM reset flag in StatusDesc
 			 */
 			if ((segresource->Stat->StatusDesc & SEG_STATUS_HEARTBEAT_TIMEOUT) != 0)
 				segresource->Stat->StatusDesc &= ~SEG_STATUS_HEARTBEAT_TIMEOUT;
+			if ((segresource->Stat->StatusDesc & SEG_STATUS_RUALIVE_FAILED) != 0)
+				segresource->Stat->StatusDesc &= ~SEG_STATUS_RUALIVE_FAILED;
+			if ((segresource->Stat->StatusDesc & SEG_STATUS_COMMUNICATION_ERROR) != 0)
+				segresource->Stat->StatusDesc &= ~SEG_STATUS_COMMUNICATION_ERROR;
+			if ((segresource->Stat->StatusDesc & SEG_STATUS_RM_RESET) != 0)
+				segresource->Stat->StatusDesc &= ~SEG_STATUS_RM_RESET;
 		}
 
 		/*
@@ -5068,7 +5064,7 @@ static const char* SegStatusDesc[] = {
 	"RUAlive probe failed",
 	"communication error",
 	"failed temporary directory",
-	"Resource manager process was reset",
+	"resource manager process was reset",
 	"no Yarn node report"
 };
 
