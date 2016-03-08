@@ -1148,7 +1148,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 		if (segresource->Stat->RMStartTimestamp != segstat->RMStartTimestamp &&
 				(segresource->Stat->StatusDesc & SEG_STATUS_HEARTBEAT_TIMEOUT) == 0 &&
 				(segresource->Stat->StatusDesc & SEG_STATUS_COMMUNICATION_ERROR) == 0 &&
-				(segresource->Stat->StatusDesc & SEG_STATUS_RUALIVE_FAILED) != 0)
+				(segresource->Stat->StatusDesc & SEG_STATUS_RUALIVE_FAILED) == 0)
 		{
 			/*
 			 * This segment's RM process has restarted.
