@@ -5078,6 +5078,7 @@ SimpStringPtr build_segment_status_description(SegStat segstat)
 	SelfMaintainBufferData buf;
 	initializeSelfMaintainBuffer(&buf, PCONTEXT);
 
+	elog(LOG, "build_segment_status_description: %d", segstat->StatusDesc);
 	if (segstat->StatusDesc == 0)
 		goto _exit;
 
@@ -5086,6 +5087,7 @@ SimpStringPtr build_segment_status_description(SegStat segstat)
 		if ((segstat->StatusDesc & 1<<idx) != 0)
 		{
 			appendSelfMaintainBuffer(&buf, SegStatusDesc[idx], strlen(SegStatusDesc[idx]));
+			elog(LOG, "build_segment_status_description: append %s", SegStatusDesc[idx]);
 			if (1<<idx == SEG_STATUS_FAILED_TMPDIR)
 			{
 				appendSelfMaintainBuffer(&buf, ":", 1);

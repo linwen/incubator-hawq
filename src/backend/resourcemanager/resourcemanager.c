@@ -2626,18 +2626,20 @@ void updateStatusOfAllNodes()
 			 (node->Stat->StatusDesc & SEG_STATUS_HEARTBEAT_TIMEOUT == 0))
 		{
 			/*
-			 * This call makes resource manager able to adjust queue and mem/core
-			 * trackers' capacity.
+			 * This segment is heartbeat timeout, update its description
+			 * and set it to unavailable if needed.
 			 */
 			if (oldStatus == RESOURCE_SEG_STATUS_AVAILABLE)
 			{
+				/*
+				 * This call makes resource manager able to adjust queue and mem/core
+				 * trackers' capacity.
+				 */
 				setSegResHAWQAvailability(node, RESOURCE_SEG_STATUS_UNAVAILABLE);
 				/*
 				 * This call makes resource pool remove unused containers.
 				 */
 				returnAllGRMResourceFromSegment(node);
-				elog(WARNING, "Resource manager sets host %s from up to down.",
-							  GET_SEGRESOURCE_HOSTNAME(node));
 				changedstatus = true;
 			}
 
@@ -2657,6 +2659,9 @@ void updateStatusOfAllNodes()
 					rm_pfree(PCONTEXT, description);
 				}
 			}
+
+			elog(WARNING, "Resource manager sets host %s heartbeat timeout.",
+						  GET_SEGRESOURCE_HOSTNAME(node));
 		}
 	}
 
