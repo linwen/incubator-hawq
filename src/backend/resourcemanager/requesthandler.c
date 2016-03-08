@@ -765,6 +765,8 @@ bool handleRMSEGRequestIMAlive(void **arg)
 												&(conntrack->MessageBuff));
 	newsegstat->FailedTmpDirNum  = header->TmpDirBrokenCount;
 	newsegstat->RMStartTimestamp = header->RMStartTimestamp;
+	newsegstat->StatusDesc = 0;
+	newsegstat->Reserved = 0;
 
 #if 0
 	/*
