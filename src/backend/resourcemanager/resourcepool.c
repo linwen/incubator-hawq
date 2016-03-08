@@ -569,6 +569,13 @@ void update_segment_status(int32_t id, char status, char* description)
 	PQExpBuffer sql = NULL;
 	PGresult* result = NULL;
 
+	if (status == SEGMENT_STATUS_UP)
+		Assert(strlen(description) == 0);
+	else if
+		Assert(strlen(description) != 0);
+	else
+		Assert(0);
+
 	sprintf(conninfo, "options='-c gp_session_role=UTILITY -c allow_system_table_mods=dml' "
 			"dbname=template1 port=%d connect_timeout=%d", master_addr_port, CONNECT_TIMEOUT);
 	conn = PQconnectdb(conninfo);
@@ -1198,8 +1205,10 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 					  "'%s' to '%s'",
 					  GET_SEGRESOURCE_HOSTNAME(segresource),
 					  segid,
-					  GET_SEGINFO_FAILEDTMPDIR(&segresource->Stat->Info),
-					  GET_SEGINFO_FAILEDTMPDIR(&segstat->Info));
+					  segresource->Stat->FailedTmpDirNum == 0 ?
+						"" : GET_SEGINFO_FAILEDTMPDIR(&segresource->Stat->Info),
+					  segstat->FailedTmpDirNum == 0 ?
+						"" : GET_SEGINFO_FAILEDTMPDIR(&segstat->Info));
 			/*
 			*  Failed temporary directory is changed,
 			*  if the length of new failed temporary directory exceeds the old one,
