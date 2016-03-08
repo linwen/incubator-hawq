@@ -860,7 +860,7 @@ void add_segment_config_row(int32_t id,
 						  "INSERT INTO gp_segment_configuration"
 						  "(registration_order,role,status,port,hostname,address,description) "
 						  "VALUES "
-						  "(%d,'%c','%c',%d,'%s','%s',%d,'%s')",
+						  "(%d,'%c','%c',%d,'%s','%s','%s')",
 						  id,role,status,port,hostname,address,description);
 	}
 	else
