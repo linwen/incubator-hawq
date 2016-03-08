@@ -1267,7 +1267,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 			segresource->Stat->FailedTmpDirNum = segstat->FailedTmpDirNum;
 
 			elog(LOG, "Resource manager change segment %s(%d) 's "
-					  "failed temporary directory is changed from '%s'",
+					  "failed temporary directory is changed to '%s'",
 					  GET_SEGRESOURCE_HOSTNAME(segresource),
 					  segid,
 					  segresource->Stat->FailedTmpDirNum == 0 ?
