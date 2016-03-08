@@ -571,7 +571,7 @@ void update_segment_status(int32_t id, char status, char* description)
 
 	if (status == SEGMENT_STATUS_UP)
 		Assert(strlen(description) == 0);
-	else if
+	else if (status == SEGMENT_STATUS_DOWN)
 		Assert(strlen(description) != 0);
 	else
 		Assert(0);
@@ -1302,6 +1302,10 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 					freeSimpleStringContent(description);
 					rm_pfree(PCONTEXT, description);
 				}
+				/*
+				elog(LOG, "Master resource manager updates segment %s's status:"
+						  "old status:%d, old status desc"
+						 GET_SEGRESOURCE_HOSTNAME(segresource)*/
 			}
 		}
 

@@ -714,7 +714,7 @@ int handleRB2RM_ClusterReport(void)
 				 */
 				if (segres->Stat->StatusDesc == 0)
 				{
-					setSegStatHAWQAvailability(segres->Stat, RESOURCE_SEG_STATUS_AVAILABLE);
+					setSegResHAWQAvailability(segres->Stat, RESOURCE_SEG_STATUS_AVAILABLE);
 					statusDescChange = true;
 				}
 			}
@@ -732,7 +732,7 @@ int handleRB2RM_ClusterReport(void)
 				 * set this segment to DOWN.
 				 */
 				Assert(segres->Stat->StatusDesc == 0);
-				setSegStatHAWQAvailability(segres->Stat, RESOURCE_SEG_STATUS_UNAVAILABLE);
+				setSegResHAWQAvailability(segres->Stat, RESOURCE_SEG_STATUS_UNAVAILABLE);
 				segres->Stat->StatusDesc |= SEG_STATUS_NO_YARN_NODE_REPORT;
 				statusDescChange = true;
 			}
