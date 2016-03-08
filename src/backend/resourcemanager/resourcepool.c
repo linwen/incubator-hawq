@@ -1135,6 +1135,21 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 		Assert(segresource != NULL);
 		uint32_t oldStatusDesc = segresource->Stat->StatusDesc;
 		uint8_t oldStatus = segresource->Stat->FTSAvailable;
+
+		/*
+		 * When get a heartbeat from a segment,
+		 * clear heartbeat timeout flag, communication error flag,
+		 * RUALIVE failed flag, RM reset flag in StatusDesc
+		 */
+		if ((segresource->Stat->StatusDesc & SEG_STATUS_HEARTBEAT_TIMEOUT) != 0)
+			segresource->Stat->StatusDesc &= ~SEG_STATUS_HEARTBEAT_TIMEOUT;
+		if ((segresource->Stat->StatusDesc & SEG_STATUS_RUALIVE_FAILED) != 0)
+			segresource->Stat->StatusDesc &= ~SEG_STATUS_RUALIVE_FAILED;
+		if ((segresource->Stat->StatusDesc & SEG_STATUS_COMMUNICATION_ERROR) != 0)
+			segresource->Stat->StatusDesc &= ~SEG_STATUS_COMMUNICATION_ERROR;
+		if ((segresource->Stat->StatusDesc & SEG_STATUS_RM_RESET) != 0)
+			segresource->Stat->StatusDesc &= ~SEG_STATUS_RM_RESET;
+
 		// bool statusChanged = oldStatus != segstat->FTSAvailable;
 		// bool reasonChanged = false;
 
@@ -1157,27 +1172,8 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 			elog(LOG, "Master RM finds segment:%s 's RM process has restarted. "
 					  "old status:%d, new status:%d",
 					  GET_SEGRESOURCE_HOSTNAME(segresource),
-					  oldStatus,
-					  segstat->FTSAvailable);
+					  oldStatus);
 		}
-		else
-		{
-			/* clear RM reset flag in StatusDesc  */
-			if ((segresource->Stat->StatusDesc & SEG_STATUS_RM_RESET) != 0)
-				segresource->Stat->StatusDesc &= ~SEG_STATUS_RM_RESET;
-		}
-
-		/*
-		 * When get a heartbeat from a segment,
-		 * clear heartbeat timeout flag, communication error flag
-		 * and RUALIVE failed flag in StatusDesc
-		 */
-		if ((segresource->Stat->StatusDesc & SEG_STATUS_HEARTBEAT_TIMEOUT) != 0)
-			segresource->Stat->StatusDesc &= ~SEG_STATUS_HEARTBEAT_TIMEOUT;
-		if ((segresource->Stat->StatusDesc & SEG_STATUS_RUALIVE_FAILED) != 0)
-			segresource->Stat->StatusDesc &= ~SEG_STATUS_RUALIVE_FAILED;
-		if ((segresource->Stat->StatusDesc & SEG_STATUS_COMMUNICATION_ERROR) != 0)
-			segresource->Stat->StatusDesc &= ~SEG_STATUS_COMMUNICATION_ERROR;
 
 		/*
 		 * If temporary directory path is changed,
