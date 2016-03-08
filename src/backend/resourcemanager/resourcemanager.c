@@ -2623,7 +2623,7 @@ void updateStatusOfAllNodes()
 		if (node != NULL &&
 			 RESOURCE_SEG_STATUS_UNAVAILABLE(curtime - node->LastUpdateTime >
 			 1000000LL * rm_segment_heartbeat_timeout) &&
-			 (node->Stat->StatusDesc & SEG_STATUS_HEARTBEAT_TIMEOUT == 0))
+			 (node->Stat->StatusDesc & SEG_STATUS_HEARTBEAT_TIMEOUT) == 0)
 		{
 			/*
 			 * This segment is heartbeat timeout, update its description
