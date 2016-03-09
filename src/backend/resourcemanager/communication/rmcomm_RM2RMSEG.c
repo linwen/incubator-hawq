@@ -241,9 +241,9 @@ void receivedRUAliveResponse(AsyncCommMessageHandlerContext  context,
 				update_segment_status(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 									  SEGMENT_STATUS_DOWN,
 									  (description->Len > 0)?description->Str:"");
-				/*add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
+				add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 										GET_SEGRESOURCE_HOSTNAME(segres),
-										SEG_STATUS_CHANGE_DOWN_RUALIVE_FAILED);*/
+										description);
 				if (description != NULL)
 				{
 					freeSimpleStringContent(description);
@@ -303,9 +303,9 @@ void sentRUAliveError(AsyncCommMessageHandlerContext context)
 			update_segment_status(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 								  SEGMENT_STATUS_DOWN,
 								  (description->Len > 0)?description->Str:"");
-			/*add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
+			add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 									GET_SEGRESOURCE_HOSTNAME(segres),
-									SEG_STATUS_CHANGE_DOWN_COMMUNICATION_ERROR);*/
+									description);
 			if (description != NULL)
 			{
 				freeSimpleStringContent(description);

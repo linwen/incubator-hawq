@@ -657,9 +657,9 @@ static const char* SegStatusChangeReasonDesc[] = {
  *  id : registration order of this segment
  *  hostname : hostname of this segment
  *  status : indicates the status of this segment, UP or DOWN
- *  reason : reason of status change
+ *  description : description of status change
  */
-void add_segment_history_row(int32_t id, char* hostname, uint8_t status, int reason)
+void add_segment_history_row(int32_t id, char* hostname, uint8_t status, char* description)
 {
 	int	libpqres = CONNECTION_OK;
 	PGconn *conn = NULL;
@@ -698,7 +698,7 @@ void add_segment_history_row(int32_t id, char* hostname, uint8_t status, int rea
 					  "INSERT INTO gp_configuration_history"
 					  "(time, registration_order, hostname, description) "
 					  "VALUES ('%s','%d','%s','%s')",
-					  curtimestr, id, hostname, SegStatusChangeReasonDesc[reason]);
+					  curtimestr, id, hostname, description);
 
 	result = PQexec(conn, sql->data);
 	if (!result || PQresultStatus(result) != PGRES_COMMAND_OK)
@@ -723,88 +723,7 @@ void add_segment_history_row(int32_t id, char* hostname, uint8_t status, int rea
 
 	elog(LOG, "Add a new row into segment configuration history catalog table,"
 			  "time: %s, registration order:%d, hostname:%s, description:%s",
-			  curtimestr, id, hostname, SegStatusChangeReasonDesc[reason]);
-
-cleanup:
-	if(sql)
-		destroyPQExpBuffer(sql);
-	if(result)
-		PQclear(result);
-	PQfinish(conn);
-}
-
-/*
- *  update a segment's status and failed tmp dir
- *  in gp_segment_configuration table.
- *  id : registration order of this segment
- *  status : new status of this segment
- *  failedNum : number of failed temporary directory
- *  failedTmpDir : failed temporary directory list, separated by comma
- */
-void update_segment_failed_tmpdir
-(int32_t id, char status, int32_t failedNum, char* failedTmpDir)
-{
-	int	libpqres = CONNECTION_OK;
-	PGconn *conn = NULL;
-	char conninfo[1024];
-	PQExpBuffer sql = NULL;
-	PGresult* result = NULL;
-
-	sprintf(conninfo, "options='-c gp_session_role=UTILITY -c allow_system_table_mods=dml' "
-			"dbname=template1 port=%d connect_timeout=%d", master_addr_port, CONNECT_TIMEOUT);
-	conn = PQconnectdb(conninfo);
-	if ((libpqres = PQstatus(conn)) != CONNECTION_OK)
-	{
-		elog(WARNING, "Fail to connect database when update segment's failed tmpdir "
-					  "in segment configuration catalog table, error code: %d, %s",
-					  libpqres,
-					  PQerrorMessage(conn));
-		PQfinish(conn);
-		return;
-	}
-
-	result = PQexec(conn, "BEGIN");
-	if (!result || PQresultStatus(result) != PGRES_COMMAND_OK)
-	{
-		elog(WARNING, "Fail to run SQL: %s when update segment's failed tmpdir "
-					  "in segment configuration catalog table, reason : %s",
-					  "BEGIN",
-					  PQresultErrorMessage(result));
-		goto cleanup;
-	}
-	PQclear(result);
-
-	sql = createPQExpBuffer();
-	appendPQExpBuffer(sql, "UPDATE gp_segment_configuration SET "
-						   "status='%c', failed_tmpdir_num = '%d', failed_tmpdir = '%s' "
-						   "WHERE registration_order=%d",
-						   status, failedNum, failedTmpDir, id);
-	result = PQexec(conn, sql->data);
-	if (!result || PQresultStatus(result) != PGRES_COMMAND_OK)
-	{
-		elog(WARNING, "Fail to run SQL: %s when update segment's failed tmpdir "
-					  "in segment configuration catalog table, reason : %s",
-					  sql->data,
-					  PQresultErrorMessage(result));
-		goto cleanup;
-	}
-	PQclear(result);
-
-	result = PQexec(conn, "COMMIT");
-	if (!result || PQresultStatus(result) != PGRES_COMMAND_OK)
-	{
-		elog(WARNING, "Fail to run SQL: %s when update segment's failed tmpdir "
-					  "in segment configuration catalog table, reason : %s",
-					  "COMMIT",
-					  PQresultErrorMessage(result));
-		goto cleanup;
-	}
-
-	elog(LOG, "Update a segment's failed tmpdir:"
-			  "status to '%c', failed_tmpdir_num to '%d', failed_tmpdir to '%s' "
-			  "in segment configuration catalog table,"
-			  "registration_order : %d",
-			  status, failedNum, failedTmpDir, id);
+			  curtimestr, id, hostname, description);
 
 cleanup:
 	if(sql)
@@ -1336,9 +1255,10 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 								SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN,
 							(description->Len > 0)?description->Str:"");
 
-				/*add_segment_history_row(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
+				add_segment_history_row(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
 										GET_SEGRESOURCE_HOSTNAME(segresource),
-										segresource->Stat->StatusDesc);*/
+										IS_SEGSTAT_FTSAVAILABLE(segresource->Stat) ?
+											SEG_STATUS_DESCRIPTION_UP:description);
 				if (description != NULL)
 				{
 					freeSimpleStringContent(description);
@@ -5156,6 +5076,8 @@ static const char* SegStatusDesc[] = {
 	"resource manager process was reset",
 	"no YARN node report"
 };
+
+
 
 /*
  * Build a string of status description for SegStat.

@@ -673,13 +673,11 @@ void adjustMemoryCoreValue(uint32_t *memorymb, uint32_t *core);
 
 /* Clean up gp_segment_configuration */
 void cleanup_segment_config(void);
+
+#define SEG_STATUS_DESCRIPTION_UP "segment is UP"
 /* update a segment's status in gp_segment_configuration table */
 void update_segment_status(int32_t id, char status, char* description);
-/* update a segment's status and failed temporary directory
- * in gp_segment_configuration table
- */
-void update_segment_failed_tmpdir
-(int32_t id, char status, int32_t failedNum, char* failedTmpDir);
+
 /* Add a new entry into gp_segment_configuration table*/
 void add_segment_config_row(int32_t 	 id,
 							char		*hostname,
@@ -699,21 +697,11 @@ void add_segment_config_row(int32_t 	 id,
 #define	SEG_STATUS_RM_RESET						0x00000010
 #define	SEG_STATUS_NO_YARN_NODE_REPORT			0x00000020
 
-enum SegStatusChangeReason {
-	SEG_STATUS_CHANGE_UNKNOWN,
-	SEG_STATUS_CHANGE_UP_GET_HEARTBEAT,
-	SEG_STATUS_CHANGE_DOWN_TIMEOUT,
-	SEG_STATUS_CHANGE_DOWN_RUALIVE_FAILED,
-	SEG_STATUS_CHANGE_DOWN_COMMUNICATION_ERROR,
-	SEG_STATUS_CHANGE_UP_NO_FAILED_TMPDIR,
-	SEG_STATUS_CHANGE_DOWN_FAILED_TMPDIR,
-	SEG_STATUS_CHANGE_DOWN_RM_RESET,
-	SEG_STATUS_CHANGE_UP_YARN_NODE_REPORT,
-	SEG_STATUS_CHANGE_DOWN_NO_YARN_NODE_REPORT,
-};
-
 /* Add a new entry into gp_configuration_history table */
-void add_segment_history_row(int32_t id, char* hostname, uint8_t status, int reason);
+void add_segment_history_row(int32_t id,
+							 char* hostname,
+							 uint8_t status,
+							 char* description);
 
 /* build a string of status description based on SegStat */
 SimpStringPtr build_segment_status_description(SegStat segstat);

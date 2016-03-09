@@ -1044,9 +1044,9 @@ bool handleRMRequestSegmentIsDown(void **arg)
 						update_segment_status(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 											  SEGMENT_STATUS_DOWN,
 											  (description->Len > 0)?description->Str:"");
-						/*add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
+						add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 												hostname,
-												SEG_STATUS_CHANGE_DOWN_RUALIVE_FAILED);*/
+												description);
 						if (description != NULL)
 						{
 							freeSimpleStringContent(description);

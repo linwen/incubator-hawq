@@ -2650,9 +2650,9 @@ void updateStatusOfAllNodes()
 				update_segment_status(idx + REGISTRATION_ORDER_OFFSET,
 										SEGMENT_STATUS_DOWN,
 										(description->Len > 0)?description->Str:"");
-				/*add_segment_history_row(idx + REGISTRATION_ORDER_OFFSET,
+				add_segment_history_row(idx + REGISTRATION_ORDER_OFFSET,
 										GET_SEGRESOURCE_HOSTNAME(node),
-										SEG_STATUS_CHANGE_DOWN_TIMEOUT);*/
+										description);
 				if (description != NULL)
 				{
 					freeSimpleStringContent(description);

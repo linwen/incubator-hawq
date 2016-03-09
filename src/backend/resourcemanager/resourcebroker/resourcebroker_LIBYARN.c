@@ -753,9 +753,10 @@ int handleRB2RM_ClusterReport(void)
 									IS_SEGSTAT_FTSAVAILABLE(segres->Stat) ?
 										SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN,
 									 (description->Len > 0)?description->Str:"");
-			/*add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
+			add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 									GET_SEGRESOURCE_HOSTNAME(segres),
-									SEG_STATUS_CHANGE_UP_YARN_NODE_REPORT);*/
+									IS_SEGSTAT_FTSAVAILABLE(segres->Stat) ?
+										SEG_STATUS_DESCRIPTION_UP:description);
 
 			elog(LOG, "Resource manager update node(%s) information with yarn node report,"
 						"status:'%c', description:%s",
