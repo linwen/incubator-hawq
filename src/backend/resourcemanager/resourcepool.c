@@ -1209,58 +1209,68 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 
 		if (tmpDirChanged)
 		{
-			elog(LOG, "Resource manager finds segment %s(%d) 's "
-					  "failed temporary directory is changed from "
-					  "'%s' to '%s'",
-					  GET_SEGRESOURCE_HOSTNAME(segresource),
-					  segid,
-					  segresource->Stat->FailedTmpDirNum == 0 ?
-						"" : GET_SEGINFO_FAILEDTMPDIR(&segresource->Stat->Info),
-					  segstat->FailedTmpDirNum == 0 ?
-						"" : GET_SEGINFO_FAILEDTMPDIR(&segstat->Info));
-			/*
-			*  Failed temporary directory is changed,
-			*  if the length of new failed temporary directory exceeds the old one,
-			*  we need to repalloc SegInfoData
-			*/
+			elog(RMLOG, "Resource manager is going to set segment %s(%d) 's "
+						"failed temporary directory from "
+						"'%s' to '%s'",
+						GET_SEGRESOURCE_HOSTNAME(segresource),
+						segid,
+						segresource->Stat->FailedTmpDirNum == 0 ?
+							"" : GET_SEGINFO_FAILEDTMPDIR(&segresource->Stat->Info),
+						segstat->FailedTmpDirNum == 0 ?
+							"" : GET_SEGINFO_FAILEDTMPDIR(&segstat->Info));
+
 			int old = segresource->Stat->Info.FailedTmpDirLen == 0 ?
 									0 :__SIZE_ALIGN64(segresource->Stat->Info.FailedTmpDirLen+1);
-			int new =  segstat->Info.FailedTmpDirLen == 0 ?
+			int new = segstat->Info.FailedTmpDirLen == 0 ?
 									0 : __SIZE_ALIGN64(segstat->Info.FailedTmpDirLen+1);
-			if (new > old &&
-				segresource->Stat->Info.Size -
-				(segresource->Stat->Info.HostNameOffset + __SIZE_ALIGN64(segresource->Stat->Info.HostNameLen+1))
-				< new)
+
+			int current = segresource->Stat->Info.Size -
+					(segresource->Stat->Info.HostNameOffset + __SIZE_ALIGN64(segresource->Stat->Info.HostNameLen+1));
+			if (segresource->Stat->Info.GRMHostNameLen != 0 && segresource->Stat->Info.GRMHostNameOffset != 0)
+				current -= __SIZE_ALIGN64(segresource->Stat->Info.GRMHostNameLen+1);
+			if (segresource->Stat->Info.GRMRackNameLen != 0 && segresource->Stat->Info.GRMRackNameOffset != 0)
+				current -= __SIZE_ALIGN64(segresource->Stat->Info.GRMRackNameLen+1);
+
+			/*
+			 * repalloc memory if new size exceeds the old one.
+			 * we don't shrink memory size if new size is less than the old one.
+			 */
+			if (new > old && current < new)
 			{
 				SegStat newSegStat = rm_repalloc(PCONTEXT,
 												 segresource->Stat,
 												 offsetof(SegStatData, Info) +
 												 segresource->Stat->Info.Size + (new - old));
 				segresource->Stat = newSegStat;
-				memset((char*)&segresource->Stat->Info + segresource->Stat->Info.Size, 0, (new - old));
 				segresource->Stat->Info.Size += (new - old);
 			}
 
-			if (segstat->FailedTmpDirNum != 0)
+			if (segresource->Stat->Info.FailedTmpDirOffset == 0)
 			{
+				Assert(segresource->Stat->FailedTmpDirNum == 0);
 				segresource->Stat->Info.FailedTmpDirOffset = segresource->Stat->Info.HostNameOffset +
 																__SIZE_ALIGN64(segresource->Stat->Info.HostNameLen+1);
+				if (segresource->Stat->Info.GRMHostNameLen != 0 && segresource->Stat->Info.GRMHostNameOffset != 0)
+					segresource->Stat->Info.FailedTmpDirOffset += __SIZE_ALIGN64(segresource->Stat->Info.GRMHostNameLen+1);
+				if (segresource->Stat->Info.GRMRackNameLen != 0 && segresource->Stat->Info.GRMRackNameOffset != 0)
+					segresource->Stat->Info.FailedTmpDirOffset += __SIZE_ALIGN64(segresource->Stat->Info.GRMRackNameLen+1);
+			}
+
+			/* clear old failed temporary directory string in SegInfoData */
+			memset((char *)&segresource->Stat->Info +
+					segresource->Stat->Info.FailedTmpDirOffset,
+					0,
+					segresource->Stat->Info.Size -
+					segresource->Stat->Info.FailedTmpDirOffset);
+
+			if (segstat->FailedTmpDirNum != 0)
+			{
 				memcpy((char *)&segresource->Stat->Info + segresource->Stat->Info.FailedTmpDirOffset,
 						GET_SEGINFO_FAILEDTMPDIR(&segstat->Info),
 						strlen(GET_SEGINFO_FAILEDTMPDIR(&segstat->Info)));
-				memset((char *)&segresource->Stat->Info +
-						 segresource->Stat->Info.FailedTmpDirOffset +
-						 segstat->Info.FailedTmpDirLen,
-						 0,
-						 segresource->Stat->Info.Size -
-						 segresource->Stat->Info.FailedTmpDirOffset -
-						 segstat->Info.FailedTmpDirLen);
 			}
 			else
 			{
-				memset((char *)&segresource->Stat->Info + segresource->Stat->Info.FailedTmpDirOffset,
-						0,
-						segresource->Stat->Info.Size - segresource->Stat->Info.FailedTmpDirOffset);
 				segresource->Stat->Info.FailedTmpDirOffset = 0;
 			}
 			segresource->Stat->Info.FailedTmpDirLen = segstat->Info.FailedTmpDirLen;
@@ -1272,6 +1282,14 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 					  segid,
 					  segresource->Stat->FailedTmpDirNum == 0 ?
 						"" : GET_SEGINFO_FAILEDTMPDIR(&segresource->Stat->Info));
+
+			elog(RMLOG, "After resource manager "
+						"updates segment failed temporary directory, "
+						"GRM hostname:%s, GRM rackname:%s",
+						segresource->Stat->Info.GRMHostNameLen == 0 ?
+							"":GET_SEGINFO_GRMHOSTNAME(&(segresource->Stat->Info)),
+						segresource->Stat->Info.GRMRackNameLen == 0 ?
+							"":GET_SEGINFO_GRMRACKNAME(&(segresource->Stat->Info)));
 		}
 
 		/* Set or clear failed temporary directory flag */
@@ -1642,8 +1660,6 @@ int updateHAWQSegWithGRMSegStat( SegStat segstat)
     	return res;
     }
 
-	segres = getSegResource(segid);
-
 	/*
 	 * update HAWQ RM's SegResource info with GRM info.
 	 */
@@ -1655,27 +1671,60 @@ int updateHAWQSegWithGRMSegStat( SegStat segstat)
 	int oldgracklen = segres->Stat->Info.GRMRackNameLen == 0 ?
 					  0 :
 					  __SIZE_ALIGN64(segres->Stat->Info.GRMRackNameLen+1);
+
+	Assert(segres->Stat->Info.HostNameOffset != 0);
+	int current = segres->Stat->Info.Size -
+					(segres->Stat->Info.HostNameOffset +
+					__SIZE_ALIGN64(segres->Stat->Info.HostNameLen+1));
+	if (segres->Stat->FailedTmpDirNum != 0)
+		current -= __SIZE_ALIGN64(segres->Stat->Info.FailedTmpDirLen +1);
+
+	/*
+	 * If new GRM hostname and rackname length exceeds the old one,
+	 * repalloc memory. But never shrink memory.
+	 */
 	int change = ghostlen + gracklen - oldghostlen - oldgracklen;
-	if (change > 0)
+	if (change > 0 && current < (ghostlen + gracklen))
 	{
 		newSegStat = rm_repalloc(PCONTEXT,
 								 segres->Stat,
 								 offsetof(SegStatData, Info) +
 								 	 segres->Stat->Info.Size + change);
 		segres->Stat = newSegStat;
+		segres->Stat->Info.Size += change;
 	}
 	else
 		newSegStat = segres->Stat;
 
-	Assert(newSegStat != NULL);
-	/* Reset the memory area for GRM host and rack name zero filled. */
-	memset((char*)newSegStat +
-		   offsetof(SegStatData, Info) + segres->Stat->Info.Size -
-		   (oldghostlen + oldgracklen),
-		   '\0',
-		   ghostlen + gracklen);
+	/* Refill failed temporary directory string */
+	if (segres->Stat->FailedTmpDirNum != 0 && change > 0
+			&& current < (ghostlen + gracklen))
+	{
+		Assert(newSegStat->Info.FailedTmpDirOffset != 0 &&
+				newSegStat->Info.FailedTmpDirLen != 0);
+		memmove((char*)newSegStat + offsetof(SegStatData, Info)
+				+ newSegStat->Info.FailedTmpDirOffset + change,
+				(char*)newSegStat + offsetof(SegStatData, Info)
+				+ newSegStat->Info.FailedTmpDirOffset,
+				__SIZE_ALIGN64(segres->Stat->Info.FailedTmpDirLen + 1));
+		memset((char*)newSegStat + offsetof(SegStatData, Info)
+				+ newSegStat->Info.FailedTmpDirOffset,
+				0,
+				change);
+		newSegStat->Info.FailedTmpDirOffset += change;
+	}
 
 	Assert(newSegStat != NULL);
+	/* Reset the memory area for GRM host and rack name zero filled. */
+	Assert(newSegStat->Info.HostNameLen != 0);
+	memset((char *)&newSegStat->Info + newSegStat->Info.HostNameOffset +
+			__SIZE_ALIGN64(newSegStat->Info.HostNameLen + 1),
+			0,
+			segres->Stat->Info.Size -
+			newSegStat->Info.HostNameOffset -
+			__SIZE_ALIGN64(newSegStat->Info.HostNameLen + 1) -
+			(segres->Stat->Info.FailedTmpDirLen == 0) ?
+				0:__SIZE_ALIGN64(segres->Stat->Info.FailedTmpDirLen + 1));
 
 	newSegStat->Info.GRMHostNameLen    = segstat->Info.GRMHostNameLen;
 	newSegStat->Info.GRMHostNameOffset = newSegStat->Info.HostNameOffset +
@@ -1683,8 +1732,6 @@ int updateHAWQSegWithGRMSegStat( SegStat segstat)
 	newSegStat->Info.GRMRackNameLen    = segstat->Info.GRMRackNameLen;
 	newSegStat->Info.GRMRackNameOffset = newSegStat->Info.GRMHostNameOffset +
 										 __SIZE_ALIGN64(newSegStat->Info.GRMHostNameLen+1);
-	newSegStat->Info.Size = newSegStat->Info.GRMRackNameOffset +
-						    __SIZE_ALIGN64(newSegStat->Info.GRMRackNameLen+1);
 
 	strcpy(GET_SEGINFO_GRMHOSTNAME(&(newSegStat->Info)),
 		   GET_SEGINFO_GRMHOSTNAME(&(segstat->Info)));
@@ -1698,6 +1745,11 @@ int updateHAWQSegWithGRMSegStat( SegStat segstat)
 			  GET_SEGINFO_HOSTNAME(&(newSegStat->Info)),
 			  GET_SEGINFO_GRMHOSTNAME(&(newSegStat->Info)),
 			  GET_SEGINFO_GRMRACKNAME(&(newSegStat->Info)));
+
+	elog(RMLOG, "After resource manager "
+				"updates segment info's GRM host name and rack name, "
+				"failed temporary directory: %s",
+				segres->Stat->FailedTmpDirNum == 0 ? "":GET_SEGINFO_FAILEDTMPDIR(&(segres->Stat->Info)));
 
 	/* Always set segment global resource manager available. */
 	setSegResGLOBAvailability(segres, RESOURCE_SEG_STATUS_AVAILABLE);
