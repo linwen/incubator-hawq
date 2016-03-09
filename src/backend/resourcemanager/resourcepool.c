@@ -1329,8 +1329,8 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 																SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN,
 										(description->Len > 0)?description->Str:"");
 
-				elog(RMLOG, "Resource manager update node(%s) information with heartbeat report,"
-							"status:%s, description:%s",
+				elog(LOG, "Resource manager update node(%s) information with heartbeat report,"
+							"status:'%c', description:%s",
 							GET_SEGRESOURCE_HOSTNAME(segresource),
 							IS_SEGSTAT_FTSAVAILABLE(segresource->Stat) ?
 								SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN,
