@@ -656,10 +656,9 @@ static const char* SegStatusChangeReasonDesc[] = {
  *  to record the status change of a segment.
  *  id : registration order of this segment
  *  hostname : hostname of this segment
- *  status : indicates the status of this segment, UP or DOWN
  *  description : description of status change
  */
-void add_segment_history_row(int32_t id, char* hostname, uint8_t status, char* description)
+void add_segment_history_row(int32_t id, char* hostname, char* description)
 {
 	int	libpqres = CONNECTION_OK;
 	PGconn *conn = NULL;

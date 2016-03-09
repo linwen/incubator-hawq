@@ -700,7 +700,6 @@ void add_segment_config_row(int32_t 	 id,
 /* Add a new entry into gp_configuration_history table */
 void add_segment_history_row(int32_t id,
 							 char* hostname,
-							 uint8_t status,
 							 char* description);
 
 /* build a string of status description based on SegStat */
