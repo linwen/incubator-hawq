@@ -1663,6 +1663,7 @@ int updateHAWQSegWithGRMSegStat( SegStat segstat)
 	/*
 	 * update HAWQ RM's SegResource info with GRM info.
 	 */
+	segres = getSegResource(segid);
 	int ghostlen = __SIZE_ALIGN64(segstat->Info.GRMHostNameLen+1);
 	int gracklen = __SIZE_ALIGN64(segstat->Info.GRMRackNameLen+1);
 	int oldghostlen = segres->Stat->Info.GRMHostNameLen == 0 ?
