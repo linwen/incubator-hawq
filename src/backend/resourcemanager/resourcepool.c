@@ -1328,6 +1328,14 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 										IS_SEGSTAT_FTSAVAILABLE(segresource->Stat) ?
 																SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN,
 										(description->Len > 0)?description->Str:"");
+
+				elog(RMLOG, "Resource manager update node(%s) information with heartbeat report,"
+							"status:%s, description:%s",
+							GET_SEGRESOURCE_HOSTNAME(segresource),
+							IS_SEGSTAT_FTSAVAILABLE(segresource->Stat) ?
+								SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN,
+							(description->Len > 0)?description->Str:"");
+
 				/*add_segment_history_row(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
 										GET_SEGRESOURCE_HOSTNAME(segresource),
 										segresource->Stat->StatusDesc);*/

@@ -757,7 +757,7 @@ int handleRB2RM_ClusterReport(void)
 									GET_SEGRESOURCE_HOSTNAME(segres),
 									SEG_STATUS_CHANGE_UP_YARN_NODE_REPORT);*/
 
-			elog(RMLOG, "Resource manager update node(%s) information "
+			elog(RMLOG, "Resource manager update node(%s) information with yarn node report,"
 						"status:%s, description:%s",
 						GET_SEGRESOURCE_HOSTNAME(segres),
 						IS_SEGSTAT_FTSAVAILABLE(segres->Stat) ?
