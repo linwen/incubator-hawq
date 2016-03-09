@@ -1025,10 +1025,11 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 									IS_SEGSTAT_FTSAVAILABLE(segresource->Stat) ?
 										SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN,
 									(description->Len > 0)?description->Str:"");
-			/*add_segment_history_row(segid+REGISTRATION_ORDER_OFFSET,
+
+			add_segment_history_row(segid+REGISTRATION_ORDER_OFFSET,
 									hostname,
-									segresource->Stat->StatusDesc);
-			*/
+									IS_SEGSTAT_FTSAVAILABLE(segresource->Stat) ?
+										SEG_STATUS_DESCRIPTION_UP:description);
 			if (description != NULL)
 			{
 				freeSimpleStringContent(description);
