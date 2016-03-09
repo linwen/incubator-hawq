@@ -849,7 +849,6 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 	SimpString		 hostnamekey;
 	SimpArray 		 hostaddrkey;
 	bool			 segcapchanged  = false;
-	int 			 reason 		= SEG_STATUS_CHANGE_UNKNOWN;
 
 	/*
 	 * Anyway, the host capacity is updated here if the cluster level capacity
@@ -900,7 +899,6 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 	/* CASE 1. It is a new host. */
 	if ( res != FUNC_RETURN_OK )
 	{
-		reason = SEG_STATUS_CHANGE_UP_GET_HEARTBEAT;
 		//uint8_t reportStatus = segstat->FTSAvailable;
 
 		/* Create machine information and corresponding resource information. */
