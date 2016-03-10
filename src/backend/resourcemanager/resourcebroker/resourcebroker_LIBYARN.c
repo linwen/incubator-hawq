@@ -770,10 +770,6 @@ int handleRB2RM_ClusterReport(void)
 				rm_pfree(PCONTEXT, description);
 			}
 		}
-		//segres->Stat->StatusReason = SEG_STATUS_CHANGE_UP_YARN_NODE_REPORT;
-		/*elog(RMLOG, "Resource manager gets node(%s) information "
-					"from Yarn cluster report, mark it to UP.",
-					GET_SEGRESOURCE_HOSTNAME(segres));*/
 	}
 	freePAIRRefList(&(PRESPOOL->Segments), &allsegres);
 

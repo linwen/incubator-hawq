@@ -768,25 +768,6 @@ bool handleRMSEGRequestIMAlive(void **arg)
 	newsegstat->StatusDesc = 0;
 	newsegstat->Reserved = 0;
 
-#if 0
-	/*
-	 * Check if the there is any failed temporary directory on this segment.
-	 * if has, master considers this segment as down, even it has heart-beat report.
-	 */
-	if (newsegstat->FailedTmpDirNum == 0)
-	{
-		newsegstat->FTSAvailable = RESOURCE_SEG_STATUS_AVAILABLE;
-	}
-	else
-	{
-		elog(RMLOG, "Resource manager finds there is %d failed temporary directories "
-					"on this segment, "
-					"so mark this segment unavailable.",
-					newsegstat->FailedTmpDirNum);
-		newsegstat->FTSAvailable = RESOURCE_SEG_STATUS_UNAVAILABLE;
-	}
-#endif
-
 	bool capstatchanged = false;
 	if ( addHAWQSegWithSegStat(newsegstat, &capstatchanged) != FUNC_RETURN_OK )
 	{
