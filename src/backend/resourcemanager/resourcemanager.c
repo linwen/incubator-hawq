@@ -2652,7 +2652,7 @@ void updateStatusOfAllNodes()
 										(description->Len > 0)?description->Str:"");
 				add_segment_history_row(idx + REGISTRATION_ORDER_OFFSET,
 										GET_SEGRESOURCE_HOSTNAME(node),
-										description);
+										(description->Len > 0)?description->Str:"");
 				if (description != NULL)
 				{
 					freeSimpleStringContent(description);
