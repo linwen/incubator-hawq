@@ -243,7 +243,7 @@ void receivedRUAliveResponse(AsyncCommMessageHandlerContext  context,
 									  (description->Len > 0)?description->Str:"");
 				add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 										GET_SEGRESOURCE_HOSTNAME(segres),
-										description);
+										description->Str);
 				if (description != NULL)
 				{
 					freeSimpleStringContent(description);
@@ -305,7 +305,7 @@ void sentRUAliveError(AsyncCommMessageHandlerContext context)
 								  (description->Len > 0)?description->Str:"");
 			add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 									GET_SEGRESOURCE_HOSTNAME(segres),
-									description);
+									description->Str);
 			if (description != NULL)
 			{
 				freeSimpleStringContent(description);
