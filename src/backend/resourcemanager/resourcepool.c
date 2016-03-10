@@ -5062,8 +5062,6 @@ static const char* SegStatusDesc[] = {
 	"no YARN node report"
 };
 
-
-
 /*
  * Build a string of status description for SegStat.
  * This string contains the reason why this segment is DOWN.
@@ -5074,17 +5072,25 @@ SimpStringPtr build_segment_status_description(SegStat segstat)
 	SimpStringPtr description = createSimpleString(PCONTEXT);
 	SelfMaintainBufferData buf;
 	initializeSelfMaintainBuffer(&buf, PCONTEXT);
+	uint32_t tmp,cnt;
 
-	elog(LOG, "build_segment_status_description: %d", segstat->StatusDesc);
 	if (segstat->StatusDesc == 0)
 		goto _exit;
 
-	for (int idx = 0; idx < sizeof(SegStatusDesc)/sizeof(char*); idx++)
+	/* Count the number of flags */
+	cnt = tmp = segstat->StatusDesc;
+	while (tmp != 0)
+	{
+		tmp = tmp >> 1;
+		cnt -= tmp;
+	}
+
+	for (int idx = 0, tmp = 0; idx < sizeof(SegStatusDesc)/sizeof(char*); idx++)
 	{
 		if ((segstat->StatusDesc & 1<<idx) != 0)
 		{
+			tmp++;
 			appendSelfMaintainBuffer(&buf, SegStatusDesc[idx], strlen(SegStatusDesc[idx]));
-			elog(LOG, "build_segment_status_description: append %s", SegStatusDesc[idx]);
 			if (1<<idx == SEG_STATUS_FAILED_TMPDIR)
 			{
 				appendSelfMaintainBuffer(&buf, ":", 1);
@@ -5092,7 +5098,8 @@ SimpStringPtr build_segment_status_description(SegStat segstat)
 										 GET_SEGINFO_FAILEDTMPDIR(&segstat->Info),
 										 strlen(GET_SEGINFO_FAILEDTMPDIR(&segstat->Info)));
 			}
-			appendSelfMaintainBuffer(&buf, ";", 1);
+			if (tmp != cnt)
+				appendSelfMaintainBuffer(&buf, ";", 1);
 		}
 	}
 
