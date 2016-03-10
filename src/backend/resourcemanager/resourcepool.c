@@ -638,19 +638,6 @@ cleanup:
 	PQfinish(conn);
 }
 
-static const char* SegStatusChangeReasonDesc[] = {
-	"invalid reason",
-	"segment status is set to UP because master gets a heartbeat from it",
-	"segment status is set to DOWN because of heartbeat timeout",
-	"segment status is set to DOWN because RUALive probe is failed",
-	"segment status is set to DOWN because of communication error",
-	"segment status is set to UP because there is no failed temporary directory",
-	"segment status is set to DOWN because failed temporary directory is detected",
-	"segment status is set to DOWN because its resource manager process was reset",
-	"segment status is set to UP because master gets its YARN node report",
-	"segment status is set to DOWN because master has not get its YARN node report",
-};
-
 /*
  *  Insert a row into gp_configuration_history,
  *  to record the status change of a segment.
@@ -1029,7 +1016,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 			add_segment_history_row(segid+REGISTRATION_ORDER_OFFSET,
 									hostname,
 									IS_SEGSTAT_FTSAVAILABLE(segresource->Stat) ?
-										SEG_STATUS_DESCRIPTION_UP:description);
+										SEG_STATUS_DESCRIPTION_UP:description->Str);
 			if (description != NULL)
 			{
 				freeSimpleStringContent(description);
