@@ -1243,7 +1243,7 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 				add_segment_history_row(segresource->Stat->ID + REGISTRATION_ORDER_OFFSET,
 										GET_SEGRESOURCE_HOSTNAME(segresource),
 										IS_SEGSTAT_FTSAVAILABLE(segresource->Stat) ?
-											SEG_STATUS_DESCRIPTION_UP:description);
+											SEG_STATUS_DESCRIPTION_UP:description->Str);
 				if (description != NULL)
 				{
 					freeSimpleStringContent(description);
