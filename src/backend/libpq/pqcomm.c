@@ -1469,7 +1469,12 @@ internal_flush(void)
 int
 pq_putmessage(char msgtype, const char *s, size_t len)
 {
-    int ret = EOF;
+
+	if (DoingCopyOut)
+	{
+		return EOF;
+	}
+
 	if ((Gp_role == GP_ROLE_DISPATCH) && IsUnderPostmaster)
 	{
 		if (!pq_send_mutex_lock())
@@ -1478,12 +1483,6 @@ pq_putmessage(char msgtype, const char *s, size_t len)
 		}
 	}
 
-    if (DoingCopyOut)
-    {
-        ret = 0;
-        goto fail;
-    }
-        
 	if (msgtype)
 	{
 		if (internal_putbytes(&msgtype, 1))
