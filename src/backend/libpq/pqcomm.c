@@ -134,6 +134,7 @@ static bool DoingCopyOut;
 static void pq_close(int code, Datum arg);
 static int	internal_putbytes(const char *s, size_t len);
 static int	internal_flush(void);
+static void pq_set_nonblocking(bool nonblocking);
 static bool pq_send_mutex_lock();
 
 #ifdef HAVE_UNIX_SOCKETS
@@ -754,6 +755,43 @@ TouchSocketFile(void)
  * --------------------------------
  */
 
+/* --------------------------------
+ *			  pq_set_nonblocking - set socket blocking/non-blocking
+ *
+ * Sets the socket non-blocking if nonblocking is TRUE, or sets it
+ * blocking otherwise.
+ * --------------------------------
+ */
+static void
+pq_set_nonblocking(bool nonblocking)
+{
+	if (MyProcPort->noblock == nonblocking)
+		return;
+
+#ifdef WIN32
+	pgwin32_noblock = nonblocking ? 1 : 0;
+#else
+
+	/*
+	 * Use COMMERROR on failure, because ERROR would try to send the error to
+	 * the client, which might require changing the mode again, leading to
+	 * infinite recursion.
+	 */
+	if (nonblocking)
+	{
+		if (!pg_set_noblock(MyProcPort->sock))
+			ereport(COMMERROR,
+				  (errmsg("could not set socket to non-blocking mode: %m")));
+	}
+	else
+	{
+		if (!pg_set_block(MyProcPort->sock))
+			ereport(COMMERROR,
+					(errmsg("could not set socket to blocking mode: %m")));
+	}
+#endif
+	MyProcPort->noblock = nonblocking;
+}
 
 /* --------------------------------
  *		pq_recvbuf - load some bytes into the input buffer
