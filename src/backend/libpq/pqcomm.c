@@ -1359,7 +1359,7 @@ pq_flush(void)
 	int			res;
 
 	/* No-op if reentrant call */
-	if ((Gp_role == GP_ROLE_DISPATCH) && IsUnderPostmaster){
+	if ((Gp_role == GP_ROLE_DISPATCH) && IsUnderPostmaster)
 	{
 		if (!pq_send_mutex_lock())
 		{
