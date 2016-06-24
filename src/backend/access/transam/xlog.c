@@ -7163,6 +7163,38 @@ StartupXLOG_Pass4(void)
 			 "Exiting StartupXLOG_Pass4");
 }
 
+void
+XLogPopulateMasterMirroring(
+	XLogRecPtr		*redoCheckPointLoc)
+{
+	TMGXACT_CHECKPOINT	*dtxCheckpoint;
+	uint32				dtxCheckpointLen;
+	char				*masterMirroringCheckpoint;
+	uint32				masterMirroringCheckpointLen;
+
+	XLogRecord *record;
+
+	CloseReadRecord();
+
+	record = ReadRecord(redoCheckPointLoc, PANIC);
+
+	UnpackCheckPointRecord(
+						record,
+						redoCheckPointLoc,
+						&dtxCheckpoint,
+						&dtxCheckpointLen,
+						&masterMirroringCheckpoint,
+						&masterMirroringCheckpointLen);
+
+	if (masterMirroringCheckpoint != NULL)
+	{
+		mmxlog_read_checkpoint_data(masterMirroringCheckpoint);
+	}
+
+	CloseReadRecord();
+}
+
+
 /*
  * Determine the recovery redo start location from the pg_control file.
  *

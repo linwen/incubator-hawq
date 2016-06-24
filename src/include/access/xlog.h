@@ -226,6 +226,8 @@ extern void CreateCheckPoint(bool shutdown, bool force);
 extern void XLogPutNextOid(Oid nextOid);
 extern XLogRecPtr GetRedoRecPtr(void);
 extern void GetNextXidAndEpoch(TransactionId *xid, uint32 *epoch);
+extern void XLogPopulateMasterMirroring(
+	XLogRecPtr		*redoCheckPointLoc);
 
 extern void XLogFileClose(void);
 extern void XLogGetBuffer(int startidx, int npages, char **from, Size *nbytes);
