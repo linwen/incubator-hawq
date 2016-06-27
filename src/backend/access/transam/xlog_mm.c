@@ -1225,14 +1225,6 @@ mmxlog_filespace_get_path(
 									 sizeof(fspc_map),
 									 gp_max_filespaces);
 
-	/* 
-	 * The table is lazily initialised.
-	 */
-	if (!filespace_map_ht)
-		filespace_map_ht = init_hash("mmxlog filespace map",
-									 sizeof(Oid), /* keysize */
-									 sizeof(fspc_map));
-
 	m = hash_search(filespace_map_ht,
 					&fspcoid,
 					HASH_FIND,
@@ -1273,14 +1265,6 @@ mmxlog_tablespace_get_filespace(
 	elog(DEBUG1, "MMXLOG: looking for tspcoid %u", tspcoid);
 
 	*filespaceOid = InvalidOid;
-
-	/* 
-	 * The table is lazily initialised.
-	 */
-	if (!tablespace_map_ht)
-		tablespace_map_ht = init_hash("mmxlog tablespace map",
-									 sizeof(Oid), /* keysize */
-									 sizeof(tspc_map));
 
 	/*
 	 * The table is lazily initialised.
