@@ -160,7 +160,7 @@ int LibYarnClient::createJob(string &jobName, string &queue,string &jobId) {
         ApplicationClient *applicationClient = (ApplicationClient*)appClient;
 
         //1. getNewApplication
-        ApplicationID appId = applicationClient->getNewApplication();
+        ApplicationId appId = applicationClient->getNewApplication();
         LOG(INFO, "LibYarnClient::createJob, getNewApplication finished, appId:[clusterTimeStamp:%lld,id:%d]",
                 appId.getClusterTimestamp(), appId.getId());
 
@@ -319,11 +319,6 @@ int LibYarnClient::forceKillJob(string &jobId) {
         errorMsg << "LibYarnClient::forceKillJob, catch the exception:" << e.what();
         setErrorMessage(errorMsg.str());
         return FR_FAILED;
-    } catch (...) {
-        stringstream errorMsg;
-        errorMsg << "LibYarnClient::forceKillJob, catch unexpected exception.";
-        setErrorMessage(errorMsg.str());
-        return FR_FAILED;
     }
 }
 
@@ -425,13 +420,13 @@ void LibYarnClient::addResourceRequest(Resource capability,
 int LibYarnClient::addContainerRequests(string &jobId, Resource &capability, int32_t num_containers,
 									   list<LibYarnNodeInfo> &preferred, int32_t priority, bool relax_locality)
 {
-	if (jobId != clientJobId) {
-		throw std::invalid_argument("The jobId is wrong, check the jobId argument");
-	}
-
-	map<string, int32_t> inferredRacks;
-
 	try {
+		if (jobId != clientJobId) {
+			throw std::invalid_argument("The jobId is wrong, check the jobId argument");
+		}
+
+		map<string, int32_t> inferredRacks;
+
 		for (list<LibYarnNodeInfo>::iterator iter = preferred.begin();
 				iter != preferred.end(); iter++) {
 			LOG(INFO, "LibYarnClient::addContainerRequests, "
@@ -458,11 +453,6 @@ int LibYarnClient::addContainerRequests(string &jobId, Resource &capability, int
 	} catch (std::exception &e) {
     	stringstream errorMsg;
     	errorMsg << "LibYarnClient::addContainerRequests catch std exception:" << e.what();
-        setErrorMessage(errorMsg.str());
-		return FR_FAILED;
-	} catch (...) {
-    	stringstream errorMsg;
-    	errorMsg << "LibYarnClient::addContainerRequests catch unexpected exception.";
         setErrorMessage(errorMsg.str());
 		return FR_FAILED;
 	}
@@ -621,14 +611,6 @@ int LibYarnClient::allocateResources(string &jobId,
         pthread_mutex_unlock(&heartbeatLock);
 
         return FR_SUCCEEDED;
-    } catch(std::exception &e) {
-        stringstream errorMsg;
-
-        errorMsg << "LibYarnClient::allocateResources, catch exception:" << e.what();
-        setErrorMessage(errorMsg.str());
-
-        pthread_mutex_unlock(&heartbeatLock);
-        return FR_FAILED;
     } catch (const ApplicationMasterNotRegisteredException &e) {
         stringstream errorMsg;
 
@@ -638,10 +620,10 @@ int LibYarnClient::allocateResources(string &jobId,
 
         pthread_mutex_unlock(&heartbeatLock);
         return FR_FAILED;
-    } catch (...) {
+    } catch(std::exception &e) {
         stringstream errorMsg;
 
-        errorMsg << "LibYarnClient::allocateResources, catch unexpected exception.";
+        errorMsg << "LibYarnClient::allocateResources, catch exception:" << e.what();
         setErrorMessage(errorMsg.str());
 
         pthread_mutex_unlock(&heartbeatLock);
@@ -706,12 +688,6 @@ int LibYarnClient::releaseResources(string &jobId,int64_t releaseContainerIds[],
         setErrorMessage(errorMsg.str());
         pthread_mutex_unlock(&heartbeatLock);
         return FR_FAILED;
-    } catch (...) {
-    	stringstream errorMsg;
-		errorMsg << "LibYarnClient::releaseResources, catch unexpected exception.";
-		setErrorMessage(errorMsg.str());
-		pthread_mutex_unlock(&heartbeatLock);
-		return FR_FAILED;
     }
 }
 
@@ -784,11 +760,6 @@ int LibYarnClient::activeResources(string &jobId,int64_t activeContainerIds[],in
         errorMsg << "LibYarnClient::activeResources, Catch the Exception:" << e.what();
         setErrorMessage(errorMsg.str());
         return FR_FAILED;
-    } catch (...) {
-    	stringstream errorMsg;
-		errorMsg << "LibYarnClient::activeResources, catch unexpected exception.";
-		setErrorMessage(errorMsg.str());
-		return FR_FAILED;
     }
 }
 int LibYarnClient::getActiveFailContainerIds(set<int64_t> &activeFailIds){
@@ -845,13 +816,6 @@ int LibYarnClient::finishJob(string &jobId, FinalApplicationStatus finalStatus) 
         activeFailContainerIds.clear();
 
         return FR_SUCCEEDED;
-    } catch (std::exception& e) {
-        stringstream errorMsg;
-
-        errorMsg << "LibYarnClient::finishJob, catch the Exception:" << e.what();
-        setErrorMessage(errorMsg.str());
-
-        return FR_FAILED;
     } catch (const ApplicationMasterNotRegisteredException &e) {
         stringstream errorMsg;
 
@@ -860,10 +824,10 @@ int LibYarnClient::finishJob(string &jobId, FinalApplicationStatus finalStatus) 
         setErrorMessage(errorMsg.str());
 
         return FR_FAILED;
-    } catch (...) {
+    } catch (std::exception& e) {
         stringstream errorMsg;
 
-        errorMsg << "LibYarnClient::finishJob, catch unexpected exception.";
+        errorMsg << "LibYarnClient::finishJob, catch the Exception:" << e.what();
         setErrorMessage(errorMsg.str());
 
         return FR_FAILED;
@@ -895,12 +859,7 @@ int LibYarnClient::getApplicationReport(string &jobId,ApplicationReport &applica
 				<< e.what();
 		setErrorMessage(errorMsg.str());
 		return FR_FAILED;
-	} catch (...) {
-    	stringstream errorMsg;
-		errorMsg << "LibYarnClient::getApplicationReport, catch unexpected exception.";
-		setErrorMessage(errorMsg.str());
-		return FR_FAILED;
-    }
+	}
 }
 
 int LibYarnClient::getContainerReports(string &jobId,list<ContainerReport> &containerReports){
@@ -922,12 +881,7 @@ int LibYarnClient::getContainerReports(string &jobId,list<ContainerReport> &cont
 		errorMsg << "LibYarnClient::getContainerReports, Catch the Exception:" << e.what();
 		setErrorMessage(errorMsg.str());
 		return FR_FAILED;
-	} catch (...) {
-    	stringstream errorMsg;
-		errorMsg << "LibYarnClient::getContainerReports, catch unexpected exception.";
-		setErrorMessage(errorMsg.str());
-		return FR_FAILED;
-    }
+	}
 }
 
 int LibYarnClient::getContainerStatuses(string &jobId,int64_t containerIds[],int containerSize,
@@ -966,12 +920,7 @@ int LibYarnClient::getContainerStatuses(string &jobId,int64_t containerIds[],int
 		errorMsg << "LibYarnClient::getContainerStatuses, Catch the Exception:" << e.what();
 		setErrorMessage(errorMsg.str());
 		return FR_FAILED;
-	} catch (...) {
-    	stringstream errorMsg;
-		errorMsg << "LibYarnClient::getContainerStatuses, catch unexpected exception.";
-		setErrorMessage(errorMsg.str());
-		return FR_FAILED;
-    }
+	}
 }
 
 int LibYarnClient::getQueueInfo(string &queue, bool includeApps,
@@ -990,11 +939,6 @@ int LibYarnClient::getQueueInfo(string &queue, bool includeApps,
         errorMsg << "LibYarnClient::getQueueInfo, Catch the Exception:" << e.what();
         setErrorMessage(errorMsg.str());
         return FR_FAILED;
-    } catch (...) {
-    	stringstream errorMsg;
-		errorMsg << "LibYarnClient::getQueueInfo, catch unexpected exception.";
-		setErrorMessage(errorMsg.str());
-		return FR_FAILED;
     }
 }
 
@@ -1011,11 +955,6 @@ int LibYarnClient::getClusterNodes(list<NodeState> &states,list<NodeReport> &nod
         errorMsg << "LibYarnClient::getClusterNodes, Catch the Exception:" << e.what();
         setErrorMessage(errorMsg.str());
         return FR_FAILED;
-    } catch (...) {
-    	stringstream errorMsg;
-		errorMsg << "LibYarnClient::getClusterNodes, catch unexpected exception.";
-		setErrorMessage(errorMsg.str());
-		return FR_FAILED;
     }
 }
 }

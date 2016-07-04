@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,6 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
+#include <string>
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
@@ -118,7 +120,7 @@ TEST_F(TestLibYarnClientC,TestAllocateResources){
 
 	LibYarnResource_t *allocatedResourcesArray;
 	int allocatedResourceArraySize;
-	
+
 	int result = allocateResources(client, jobId, 1, 1, 1024, 2, blackListAdditions,
 			blacklistAddsSize, blackListRemovals, blackListRemovalsSize, NULL, 0, &allocatedResourcesArray, &allocatedResourceArraySize);
 	EXPECT_EQ(result,FUNCTION_FAILED);

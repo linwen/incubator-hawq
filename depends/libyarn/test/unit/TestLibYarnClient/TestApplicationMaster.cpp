@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,6 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
+#include <list>
+#include <string>
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
@@ -67,7 +70,7 @@ TEST_F(TestApplicationMaster,TestRegisterApplicationMaster){
 	response.setClientToAMTokenMasterKey(key);
 	response.setApplicationACLs(aclMapList);
 	EXPECT_CALL((*protocol),registerApplicationMaster(_)).Times(AnyNumber()).WillOnce(Return(response));
-	
+
 	string amHost("localhost");
 	int amPort = 8032;
 	string am_tracking_url = "";
@@ -120,7 +123,7 @@ TEST_F(TestApplicationMaster,TestAllocate){
 	allocateResponse.setAllocatedContainers(containers);
 	ContainerStatus containerStatus;
 	containerStatus.setContainerId(containerId);
-	containerStatus.setContaierState(ContainerState::C_RUNNING);
+	containerStatus.setContainerState(ContainerState::C_RUNNING);
 	string diagnostics("diagnostics");
 	containerStatus.setDiagnostics(diagnostics);
 	containerStatus.setExitStatus(-1000);
@@ -144,7 +147,7 @@ TEST_F(TestApplicationMaster,TestAllocate){
 	nmTokens.push_back(nmToken);
 	allocateResponse.setNMTokens(nmTokens);
 	EXPECT_CALL((*protocol),allocate(_)).Times(AnyNumber()).WillOnce(Return(allocateResponse));
-		
+
 	list<ResourceRequest> asks;
 	list<ContainerId> releases;
 	ResourceBlacklistRequest blacklistRequest;

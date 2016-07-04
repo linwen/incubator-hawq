@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef APPLICATIONIDS_H_
-#define APPLICATIONIDS_H_
+#ifndef APPLICATIONIdS_H_
+#define APPLICATIONIdS_H_
 
 #include "YARN_yarn_protos.pb.h"
 
@@ -33,12 +33,12 @@ message ApplicationIdProto {
 }
  */
 
-class ApplicationID {
+class ApplicationId {
 public:
-	ApplicationID();
-	ApplicationID(const ApplicationIdProto &proto);
-	ApplicationID(const ApplicationID &applicationId);
-	virtual ~ApplicationID();
+	ApplicationId();
+	ApplicationId(const ApplicationIdProto &proto);
+	ApplicationId(const ApplicationId &applicationId);
+	virtual ~ApplicationId();
 
 	ApplicationIdProto& getProto();
 
@@ -53,4 +53,4 @@ private:
 };
 
 } /* namespace libyarn */
-#endif /* APPLICATIONIDS_H_ */
+#endif /* APPLICATIONIdS_H_ */
