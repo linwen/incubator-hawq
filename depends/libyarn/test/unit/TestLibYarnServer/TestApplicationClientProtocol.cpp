@@ -47,7 +47,7 @@
 #include "protocolrecords/GetQueueUserAclsInfoResponse.h"
 
 #include "libyarnserver/ApplicationClientProtocol.h"
-#include "MockApplicationCLientProtocolInternal.h"
+#include "MockApplicationClientProtocolInternal.h"
 
 using std::string;
 using Yarn::Internal::RpcAuth;
