@@ -43,7 +43,7 @@
 #include "utils/memutils.h"
 #include "utils/portal.h"
 
-int server_ticket_renew_interval = 43200000; /* millisecond */
+int server_ticket_renew_interval = pg_krb_ticket_renew_interval * 3600 * 1000; /* millisecond */
 char *krb5_ccname = "/tmp/postgres.ccname";
 static volatile int64 *server_ticket_last_renew = NULL;
 
@@ -93,6 +93,8 @@ login (void)
 
 	int64 now = tp.tv_sec;
 	now = (now * 1000000 + tp.tv_usec) / 1000;  /* millisecond */
+
+	elog(LOG, "login(): server_ticket_renew_interval: %d", server_ticket_renew_interval);
 
 	if (now > *server_ticket_last_renew + server_ticket_renew_interval)
 	{
