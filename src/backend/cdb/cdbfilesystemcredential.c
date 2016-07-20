@@ -94,8 +94,6 @@ login (void)
 	int64 now = tp.tv_sec;
 	now = (now * 1000000 + tp.tv_usec) / 1000;  /* millisecond */
 
-	elog(LOG, "login(): server_ticket_renew_interval: %d", server_ticket_renew_interval);
-
 	if (now > *server_ticket_last_renew + server_ticket_renew_interval)
 	{
 		char cmd[1024];
