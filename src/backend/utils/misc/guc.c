@@ -6595,16 +6595,6 @@ static struct config_int ConfigureNamesInt[] =
 		524288, 32768, 8388608, NULL, NULL
 	},
 
-	{
-		{"krb_ticket_renew_interval", PGC_SIGHUP, CONN_AUTH_SECURITY,
-			gettext_noop("the refresh interval of the Kerberos ticket."),
-			NULL,
-			GUC_SUPERUSER_ONLY
-		},
-		&pg_krb_ticket_renew_interval,
-		12, 1, INT_MAX, NULL, NULL
-	},
-
 	/* End-of-list marker */
 	{
 		{NULL, 0, 0, NULL, NULL}, NULL, 0, 0, 0, NULL, NULL

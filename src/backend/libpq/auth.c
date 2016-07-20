@@ -153,7 +153,6 @@ static int	CheckCertAuth(Port *port);
 char	   *pg_krb_server_keyfile;
 char	   *pg_krb_srvnam;
 bool		pg_krb_caseins_users;
-int 		pg_krb_server_ticket_renew_interval;
 
 
 /*----------------------------------------------------------------

@@ -43,7 +43,7 @@
 #include "utils/memutils.h"
 #include "utils/portal.h"
 
-int server_ticket_renew_interval = pg_krb_ticket_renew_interval * 3600 * 1000; /* millisecond */
+int server_ticket_renew_interval = 43200000; /* millisecond */
 char *krb5_ccname = "/tmp/postgres.ccname";
 static volatile int64 *server_ticket_last_renew = NULL;
 
