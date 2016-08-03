@@ -895,7 +895,7 @@ int LibYarnClient::getApplicationReport(string &jobId,ApplicationReport &applica
                     applicationReport.getCurrentAppAttemptId().getAttemptId());
 
         return FR_SUCCEEDED;
-	} catch (std::exception& e) {
+    } catch (std::exception& e) {
         stringstream errorMsg;
         errorMsg << "LibYarnClient::getApplicationReport, Catch the Exception:"
                 << e.what();
