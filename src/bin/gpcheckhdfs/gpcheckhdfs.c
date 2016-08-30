@@ -189,7 +189,9 @@ int testHdfsOperateFile(hdfsFS fs, const char * filepath, const char * dfscomple
     return 0;
 }
 
-int testHdfsConnect(hdfsFS * fsptr, const char * host, int iPort, const char * krbstatus, const char * krb_keytabfile) {
+int testHdfsConnect(hdfsFS * fsptr, const char * host, int iPort,
+        const char * krbstatus, const char * krb_srvname,
+        const char * krb_keytabfile) {
     struct hdfsBuilder * builder = hdfsNewBuilder();
     hdfsBuilderSetNameNode(builder, host);
 
@@ -198,7 +200,6 @@ int testHdfsConnect(hdfsFS * fsptr, const char * host, int iPort, const char * k
 
     if (NULL != krbstatus && NULL != krb_keytabfile &&
             (!strcasecmp(krbstatus, "on") || !strcasecmp(krbstatus, "true"))) {   //Kerberos if On
-        char * krb_srvname = "postgres";
         char * krb5_ccname = "/tmp/postgres.ccname";
         char cmd[1024];
         snprintf(cmd, sizeof(cmd), "kinit -k -t %s -c %s %s",
