@@ -86,7 +86,8 @@ int main(int argc, char * argv[]) {
     *  argv[4]:krb service name
     *  argv[5]:krb keytab file
     */
-    if (argc < 3 || argc > 5 || ((argc == 4 || argc == 5) && 0 != strcasecmp(argv[3],"off") && 0 != strcasecmp(argv[3],"false"))) {
+    if (argc < 3 || argc > 6
+            || ((argc == 4 || argc == 5) && 0 != strcasecmp(argv[3], "off") && 0 != strcasecmp(argv[3], "false"))) {
         fprintf(stderr,
                 "ERROR: gpcheckhdfs parameter error, Please check your config file\n"
                         "\tDFS_NAME and DFS_URL are required, KERBEROS_SERVICENAME, KERBEROS_KEYFILE and "
