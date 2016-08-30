@@ -170,7 +170,7 @@ class HawqInit:
             local_ssh(cmd, logger)
 
     def check_hdfs_path(self):
-        cmd = "%s/bin/gpcheckhdfs hdfs %s %s %s" % \
+        cmd = "%s/bin/gpcheckhdfs hdfs %s %s %s %s" % \
               (self.GPHOME, self.dfs_url, self.enable_secure_filesystem, self.krb_srvname, self.krb_server_keyfile)
         logger.info("Check if hdfs path is available")
         logger.debug("Check hdfs: %s" % cmd)
