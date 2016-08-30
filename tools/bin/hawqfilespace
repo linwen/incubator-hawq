@@ -261,10 +261,10 @@ def getdir(prompt, hosts=[], primary=None, shared=False, fsysn=None, db=None):
                 rows = cursor.fetchall()
                 krbstatus = rows[0][0]
 
-				cursor = dbconn.execSQL(db, "show krb_srvname")
+                cursor = dbconn.execSQL(db, "show krb_srvname")
                 db.commit()
-				rows = cursor.fetchall();
-				krb_srvname = rows[0][0]
+                rows = cursor.fetchall();
+                krb_srvname = rows[0][0]
 
                 cursor = dbconn.execSQL(db, "show krb_server_keyfile")
                 db.commit()

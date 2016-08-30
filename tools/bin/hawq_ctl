@@ -128,12 +128,12 @@ class HawqInit:
         else:
             self.krb_server_keyfile = ''
 
-		if 'krb_srvname' in self.hawq_dict:
-			self.krb_srvname = self.hawq_dict['krb_srvname']
-		else:
-			self.krb_srvname = 'postgres'
+        if 'krb_srvname' in self.hawq_dict:
+            self.krb_srvname = self.hawq_dict['krb_srvname']
+        else:
+            self.krb_srvname = 'postgres'
     
-	def _write_config(self):
+    def _write_config(self):
         configFile = "%s/etc/_mgmt_config" % self.GPHOME
         # Clean configFile while the first write in.
         with open(configFile, 'w') as f: 
