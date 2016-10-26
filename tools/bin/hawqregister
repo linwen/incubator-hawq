@@ -556,6 +556,9 @@ class HawqRegister(object):
             self.file_format = 'Parquet'
             self.files_same_path = []
             self.sizes_same_path = []
+            self.tupcounts_same_path = []
+            self.varblockcounts_same_path = []
+            self.eofuncompresseds_same_path = []
             self.segnos_same_path = []
             self._check_hash_type() # Usage1 only support randomly distributed table
         self.queries = "set allow_system_table_mods='dml';"
@@ -619,6 +622,7 @@ class HawqRegister(object):
         if not self.yml:
             self._check_no_regex_filepath([self.filepath])
             self.files, self.sizes = self._get_files_in_hdfs(self.filepath)
+            self.tupcounts = self.eofuncompresseds = self.varblockcounts = [-1 for i in range(len(self.files))]
 
         self.do_not_move, self.files_update, self.sizes_update, self.tupcounts_update, self.eofuncompresseds_update, self.varblockcounts_update = False, [], [], [], [], []
         self.files_append, self.sizes_append, self.tupcounts_append, self.eofuncompresseds_append, self.varblockcounts_append = [f for f in self.files], [sz for sz in self.sizes], [tc for tc in self.tupcounts], [eof for eof in self.eofuncompresseds], [v for v in self.varblockcounts]
@@ -837,9 +841,9 @@ class HawqRegister(object):
                 query += ';'
             segno += len(same_path_eofs)
             if len(append_eofs) > 0:
-                query += 'insert into pg_aoseg.%s values(%d, %d, %d, %d)' % (self.seg_name, segno, append_eofs[0], update_tupcounts[0], update_eofuncompresseds[0])
+                query += 'insert into pg_aoseg.%s values(%d, %d, %d, %d)' % (self.seg_name, segno, append_eofs[0], append_tupcounts[0], append_eofuncompresseds[0])
                 k = 0
-                for append_eof, append_tupcount, append_eofuncompressed in zip(append_eofs[1:], append_tupcounts[1:], append_eofuncompressed[1:]):
+                for append_eof, append_tupcount, append_eofuncompressed in zip(append_eofs[1:], append_tupcounts[1:], append_eofuncompresseds[1:]):
                     query += ',(%d, %d, %d, %d)' % (segno + k + 1, append_eof, append_tupcount, append_eofuncompressed)
                     k += 1
                 query += ';'
