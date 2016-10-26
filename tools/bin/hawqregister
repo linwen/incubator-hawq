@@ -450,13 +450,6 @@ class HawqRegister(object):
                 eofuncompresseds.append(ele['eofuncompressed'] if ele.has_key('eofuncompressed') else -1)
                 varblockcounts.append(ele['varblockcount'] if ele.has_key('varblockcount') else -1)
 
-        # debug information, to be deleted
-        print files
-        print sizes
-        print tupcounts
-        print eofuncompresseds
-        print varblockcounts
-
         encoding = params['Encoding']
         bucketNum = params['Bucketnum'] if params['Distribution_Policy'].startswith('DISTRIBUTED BY') else 6
         self._set_yml_data(Format, files, sizes, tupcounts, eofuncompresseds, varblockcounts, params['TableName'], params['%s_Schema' % Format], params['Distribution_Policy'], params[Format_FileLocations], bucketNum, partitionby, partitions_constraint, partitions_name, partitions_compression_level, partitions_compression_type, partitions_checksum, partitions_filepaths, partitions_filesizes, encoding)
@@ -872,8 +865,6 @@ class HawqRegister(object):
                     k += 1
                 query += ';'
         self.queries += query
-
-        print self.queries
     
     def _modify_metadata(self):
         try:
