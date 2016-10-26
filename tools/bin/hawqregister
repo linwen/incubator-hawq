@@ -420,7 +420,7 @@ class HawqRegister(object):
         partitions_checksum = []
         partitions_compression_level = []
         partitions_compression_type = []
-        files, sizes, tupcounts, eofuncompresseds = [], [], [], []
+        files, sizes, tupcounts, eofuncompresseds, varblockcounts = [], [], [], [], []
 
         if params['FileFormat'].lower() == 'parquet':
             Format = 'Parquet'
@@ -443,12 +443,13 @@ class HawqRegister(object):
                     partitions_filesizes.append([item['size'] for item in pfile])
             partitions_name = [d['Name'] for d in params[Format_FileLocations]['Partitions']]
         if len(params[Format_FileLocations]['Files']):
-            files, sizes, tupcounts, eofuncompresseds = [params['DFS_URL'] + d['path'] for d in params[Format_FileLocations]['Files']], [d['size'] for d in params[Format_FileLocations]['Files']], [d['tupcount'] for d in params[Format_FileLocations]['Files']], [d['eofuncompressed'] for d in params[Format_FileLocations]['Files']]
-            if Format == 'AO':
-                varblockcounts = [d['varblockcount'] for d in params[Format_FileLocations]['Files']]
-            else:
-                varblockcounts = [-1 for i in range(len(files))]
-        
+            for ele in params[Format_FileLocations]['Files']:
+                files.append(params['DFS_URL'] + ele['path'])
+                sizes.append(ele['size'])
+                tupcounts.append(ele['tupcount'] if ele.has_key('tupcount') else -1)
+                eofuncompresseds.append(ele['eofuncompressed'] if ele.has_key('eofuncompressed') else -1)
+                varblockcounts.append(ele['varblockcount'] if ele.has_key('varblockcount') else -1)
+
         # debug information, to be deleted
         print files
         print sizes
