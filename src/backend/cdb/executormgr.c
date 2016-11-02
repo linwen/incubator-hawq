@@ -370,7 +370,7 @@ executormgr_validate_conn(PGconn *conn)
               libpq_gettext(
                   "server closed the connection unexpectedly\n"
              "\tThis probably means the server terminated abnormally\n"
-                 "\tbefore or while processing the request.\n"));
+                 "\tbefore or while processing the request. executormgr_validate_conn\n"));
     conn->status = CONNECTION_BAD;
     closesocket(conn->sock);
     conn->sock = -1;

@@ -749,7 +749,7 @@ definitelyFailed:
 					  libpq_gettext(
 								"server closed the connection unexpectedly\n"
 				   "\tThis probably means the server terminated abnormally\n"
-							 "\tbefore or while processing the request.\n"));
+							 "\tbefore or while processing the request. pqReadData fe\n"));
 	conn->status = CONNECTION_BAD;		/* No more connection to backend */
 	pqsecure_close(conn);
 	closesocket(conn->sock);
@@ -827,7 +827,7 @@ pqSendSome(PGconn *conn, int len)
 									  libpq_gettext(
 								"server closed the connection unexpectedly\n"
 					"\tThis probably means the server terminated abnormally\n"
-							 "\tbefore or while processing the request.\n"));
+							 "\tbefore or while processing the request. pqSendSome fe\n"));
 
 					/*
 					 * We used to close the socket here, but that's a bad idea
