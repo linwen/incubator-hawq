@@ -314,6 +314,31 @@ TEST_F(TestHawqRanger, ResourceIncludeATest) {
 	}
 }
 
+TEST_F(TestHawqRanger, HcatalogTest) {
+	SQLUtility util;
+	if (util.getGUCValue("hawq_acl_type") == "ranger")
+	{
+		/*
+		 * create a table in hive and populate some rows
+		 */
+		clearEnv(&util, "hcatalog", 7);
+		string rootPath(util.getTestRootPath());
+		string sqlPath = rootPath + "/Ranger/data/testhive.sql";
+		auto cmd =  hawq::test::stringFormat("hive -f %s", sqlPath.c_str());
+
+		/*
+		 * create a user and query this table, fail.
+		 */
+		addUser(&util, "hcatalog", 7, false);
+		runSQLFile(&util, "hcatalog", "fail", 7);
+
+		/*
+		 * add an allow policy for this user and query again, succeed.
+		 */
+		addPolicy(&util, "hcatalog", 7);
+		runSQLFile(&util, "hcatalog", "success", 7);
+	}
+}
 void TestHawqRanger::addUser(hawq::test::SQLUtility* util, std::string case_name, int user_index, bool full_policy, int writable_index)
 {
 	string rootPath = util->getTestRootPath();
