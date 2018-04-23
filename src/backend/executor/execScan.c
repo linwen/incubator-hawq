@@ -183,7 +183,39 @@ ExecScan(ScanState *node,
 				 * Form a projection tuple, store it in the result tuple slot
 				 * and return it.
 				 */
-				return ExecProject(projInfo, NULL);
+				TupleTableSlot *ret = ExecProject(projInfo, NULL);
+				/*
+				 * Bloom filter check
+				 */
+				RuntimeFilterState* rfState = &node->runtimeFilter;
+				if (rfState->hasRuntimeFilter && !rfState->stopRuntimeFilter)
+				{
+					Assert(rfState->bloomfilter != NULL);
+					rfState->bloomfilter->nTested++;
+					uint32_t hashkey = 0;
+					ListCell *hk;
+					int i = 0;
+					Datum *values = slot_get_values(ret);
+					foreach(hk, rfState->joinkeys)
+					{
+						AttrNumber attrno = (AttrNumber) lfirst(hk);
+						Datum keyval;
+						uint32 hkey;
+
+						/* rotate hashkey left 1 bit at each step */
+						hashkey = (hashkey << 1) | ((hashkey & 0x80000000) ? 1 : 0);
+						keyval = values[attrno - 1];
+						hkey = DatumGetUInt32(FunctionCall1(&rfState->hashfunctions[i], keyval));
+						hashkey ^= hkey;
+						i++;
+					}
+
+					if (!FindBloomFilter(rfState->bloomfilter, hashkey)) {
+						continue;
+					}
+					rfState->bloomfilter->nMatched++;
+				}
+				return ret;
 			}
 			else
 			{

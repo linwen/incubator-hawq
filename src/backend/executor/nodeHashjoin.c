@@ -342,16 +342,14 @@ ExecHashJoin(HashJoinState *node)
 	/*
 	 * run the hash join process
 	 */
-	for (;;)
-	{
+	for (;;) {
 		/* We must never use an eagerly released hash table */
 		Assert(!hashtable->eagerlyReleased);
-		
+
 		/*
 		 * If we don't have an outer tuple, get the next one
 		 */
-		if (node->hj_NeedNewOuter)
-		{
+		if (node->hj_NeedNewOuter) {
 			outerTupleSlot = ExecHashJoinOuterGetTuple(outerNode,
 													   node,
 													   &hashvalue);
@@ -359,21 +357,19 @@ ExecHashJoin(HashJoinState *node)
 			 * If the inner relation is completely empty, and we're not doing an
 			 * outer join, we can quit without scanning the outer relation.
 			 */
-			if (TupIsNull(outerTupleSlot))
-			{
+			if (TupIsNull(outerTupleSlot)) {
 				/* end of join */
 				if (gp_eager_hashtable_release
-						&& node->js.jointype != JOIN_LEFT
-						&& node->js.jointype != JOIN_LASJ
-						&& node->js.jointype != JOIN_LASJ_NOTIN
-						&& node->hj_InnerEmpty)
-				{
+					&& node->js.jointype != JOIN_LEFT
+					&& node->js.jointype != JOIN_LASJ
+					&& node->js.jointype != JOIN_LASJ_NOTIN
+					&& node->hj_InnerEmpty) {
 					ExecEagerFreeHashJoin(node);
 				}
 				return NULL;
 			}
 
-			Gpmon_M_Incr(GpmonPktFromHashJoinState(node), GPMON_QEXEC_M_ROWSIN); 
+			Gpmon_M_Incr(GpmonPktFromHashJoinState(node), GPMON_QEXEC_M_ROWSIN);
 			CheckSendPlanStateGpmonPkt(&node->js.ps);
 			node->js.ps.ps_OuterTupleSlot = outerTupleSlot;
 			econtext->ecxt_outertuple = outerTupleSlot;
@@ -393,13 +389,12 @@ ExecHashJoin(HashJoinState *node)
 			 * Save outer tuples for the batch 0 to disk if workfile caching is
 			 * enabled. We do this only when there is spilling.
 			 */
-			if (gp_workfile_caching && batchno == 0 && hashtable->nbatch > 1 && !node->cached_workfiles_loaded)
-			{
+			if (gp_workfile_caching && batchno == 0 && hashtable->nbatch > 1 && !node->cached_workfiles_loaded) {
 				Assert(batchno >= node->nbatch_loaded_state);
 				ExecHashJoinSaveTuple(&node->js.ps, ExecFetchSlotMemTuple(outerTupleSlot, false),
 									  hashvalue,
 									  hashtable,
-                                      &hashtable->batches[batchno]->outerside,
+									  &hashtable->batches[batchno]->outerside,
 									  hashtable->bfCxt);
 			}
 
@@ -407,8 +402,7 @@ ExecHashJoin(HashJoinState *node)
 			 * Now we've got an outer tuple and the corresponding hash bucket,
 			 * but this tuple may not belong to the current batch.
 			 */
-			if (batchno != hashtable->curbatch && !node->cached_workfiles_found)
-			{
+			if (batchno != hashtable->curbatch && !node->cached_workfiles_found) {
 				/*
 				 * Need to postpone this outer tuple to a later batch. Save it
 				 * in the corresponding outer-batch file.
@@ -419,18 +413,17 @@ ExecHashJoin(HashJoinState *node)
 				ExecHashJoinSaveTuple(&node->js.ps, ExecFetchSlotMemTuple(outerTupleSlot, false),
 									  hashvalue,
 									  hashtable,
-                                      &hashtable->batches[batchno]->outerside,
+									  &hashtable->batches[batchno]->outerside,
 									  hashtable->bfCxt);
 				node->hj_NeedNewOuter = true;
-				continue;		/* loop around for a new outer tuple */
+				continue;        /* loop around for a new outer tuple */
 			}
 		}  /* if (node->hj_NeedNewOuter) */
 
 		/*
 		 * OK, scan the selected hash bucket for matches
 		 */
-		for (;;)
-		{
+		for (;;) {
 			/*
 			 * OPT-3325: Handle NULLs in the outer side of LASJ_NOTIN
 			 *  - if tuple is NULL and inner is not empty, drop outer tuple
@@ -438,23 +431,22 @@ ExecHashJoin(HashJoinState *node)
 			 *    find no match for this tuple in the inner side
 			 */
 			if (node->js.jointype == JOIN_LASJ_NOTIN &&
-					!node->hj_InnerEmpty &&
-					isJoinExprNull(node->hj_OuterHashKeys,econtext))
-			{
+				!node->hj_InnerEmpty &&
+				isJoinExprNull(node->hj_OuterHashKeys, econtext)) {
 				node->hj_MatchedOuter = true;
-				break;		/* loop around for a new outer tuple */
+				break;        /* loop around for a new outer tuple */
 			}
 
 			curtuple = ExecScanHashBucket(hashNode, node, econtext);
 			if (curtuple == NULL)
-				break;			/* out of matches */
+				break;            /* out of matches */
 
 			/*
 			 * we've got a match, but still need to test non-hashed quals
 			 */
 			inntuple = ExecStoreMemTuple(HJTUPLE_MINTUPLE(curtuple),
 										 node->hj_HashTupleSlot,
-										 false);	/* don't pfree */
+										 false);    /* don't pfree */
 			econtext->ecxt_innertuple = inntuple;
 
 			/* reset temp memory each time to avoid leaks from qual expr */
@@ -468,19 +460,16 @@ ExecHashJoin(HashJoinState *node)
 			 * Only the joinquals determine MatchedOuter status, but all quals
 			 * must pass to actually return the tuple.
 			 */
-			if (joinqual == NIL || ExecQual(joinqual, econtext, false /* resultForNull */))
-			{
+			if (joinqual == NIL || ExecQual(joinqual, econtext, false /* resultForNull */)) {
 				node->hj_MatchedOuter = true;
 
 				/* In an antijoin, we never return a matched tuple */
-				if (node->js.jointype == JOIN_LASJ || node->js.jointype == JOIN_LASJ_NOTIN)
-				{
+				if (node->js.jointype == JOIN_LASJ || node->js.jointype == JOIN_LASJ_NOTIN) {
 					node->hj_NeedNewOuter = true;
-					break;		/* out of loop over hash bucket */
+					break;        /* out of loop over hash bucket */
 				}
 
-				if (otherqual == NIL || ExecQual(otherqual, econtext, false))
-				{
+				if (otherqual == NIL || ExecQual(otherqual, econtext, false)) {
 					Gpmon_M_Incr_Rows_Out(GpmonPktFromHashJoinState(node));
 					CheckSendPlanStateGpmonPkt(&node->js.ps);
 					return ExecProject(node->js.ps.ps_ProjInfo, NULL);
@@ -489,10 +478,9 @@ ExecHashJoin(HashJoinState *node)
 				/*
 				 * If we didn't return a tuple, may need to set NeedNewOuter
 				 */
-				if (node->js.jointype == JOIN_IN)
-				{
+				if (node->js.jointype == JOIN_IN) {
 					node->hj_NeedNewOuter = true;
-					break;		/* out of loop over hash bucket */
+					break;        /* out of loop over hash bucket */
 				}
 			}
 		}
@@ -777,6 +765,33 @@ ExecEndHashJoin(HashJoinState *node)
 }
 
 /*
+ * Create runtime filter state for scan node.
+ * TODO: how to pass it across motion
+ */
+static void
+CreateRuntimeFilterState(RuntimeFilterState* rf, HashJoinState *hjstate)
+{
+	/* record projection info */
+	ListCell *hk;
+	int i = 0;
+	foreach(hk, hjstate->hj_OuterHashKeys)
+	{
+		ExprState  *keyexpr = (ExprState *) lfirst(hk);
+		Var *variable = (Var *) keyexpr->expr;
+		rf->joinkeys = lappend_int(rf->joinkeys, variable->varattno);
+		i++;
+	}
+	rf->hashfunctions = (FmgrInfo *) palloc(i * sizeof(FmgrInfo));
+	memcpy(rf->hashfunctions, hjstate->hj_HashTable->hashfunctions, i*sizeof(FmgrInfo));
+	size_t size = offsetof(BloomFilterData, data) + hjstate->hj_HashTable->bloomfilter->data_size;
+	rf->bloomfilter = palloc0(size);
+	memcpy(rf->bloomfilter, hjstate->hj_HashTable->bloomfilter, size);
+	rf->hasRuntimeFilter = true;
+	rf->stopRuntimeFilter = false;
+	rf->checkedSamples = false;
+}
+
+/*
  * ExecHashJoinOuterGetTuple
  *
  *		get the next outer tuple for hashjoin: either by
@@ -798,6 +813,38 @@ ExecHashJoinOuterGetTuple(PlanState *outerNode,
 	ExprContext    *econtext;
 
 	HashState *hashState = (HashState *) innerPlanState(hjstate);
+
+	RuntimeFilterState* rf = &((ScanState*)outerNode)->runtimeFilter;
+	/* initialize bloom filter for scan node */
+	if (hashtable->bloomfilter != NULL &&
+		outerNode->type == T_TableScanState && /* only support scan node for left tree. */
+		rf->hasRuntimeFilter == false)
+	{
+		Assert(hashtable->bloomfilter->isCreated);
+		CreateRuntimeFilterState(rf, hjstate);
+	}
+
+	/* Adaptive runtime filter check.
+	 *
+	 */
+	HashJoin *hj = (HashJoin*)hjstate->js.ps.plan;
+	if (rf->hasRuntimeFilter && !rf->stopRuntimeFilter && !rf->checkedSamples &&
+			rf->bloomfilter->nTested >= hawq_hashjoin_bloomfilter_sampling_number)
+	{
+		double real_ratio = (rf->bloomfilter->nMatched) / (rf->bloomfilter->nTested);
+		if(real_ratio > hawq_hashjoin_bloomfilter_ratio)
+		{
+			rf->stopRuntimeFilter = true;
+			elog(LOG, "Stop using bloomfilter on scan, since for first %d tuples, the ratio is %.3f, which exceeds the %.3f",
+					rf->bloomfilter->nTested, real_ratio, hawq_hashjoin_bloomfilter_ratio);
+		}
+		else
+		{
+			elog(LOG, "Continue using bloomfilter on scan, for first %d tuples, the ratio is %.3f, which is lower than the %.3f",
+					rf->bloomfilter->nMatched, real_ratio, hawq_hashjoin_bloomfilter_ratio);
+		}
+		rf->checkedSamples = true;
+	}
 
 	/* Read tuples from outer relation only if it's the first batch
 	 * and we're not loading from cached workfiles.  */
@@ -840,7 +887,6 @@ ExecHashJoinOuterGetTuple(PlanState *outerNode,
 			{
 				/* remember outer relation is not empty for possible rescan */
 				hjstate->hj_OuterNotEmpty = true;
-
 				return slot;
 			}
 			/*
