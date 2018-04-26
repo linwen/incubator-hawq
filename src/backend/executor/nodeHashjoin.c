@@ -769,26 +769,57 @@ ExecEndHashJoin(HashJoinState *node)
  * TODO: how to pass it across motion
  */
 static void
-CreateRuntimeFilterState(RuntimeFilterState* rf, HashJoinState *hjstate)
+CreateRuntimeFilterState(RuntimeFilterState* rf, HashJoinState *hjstate, ScanState* scan)
 {
 	/* record projection info */
 	ListCell *hk;
-	int i = 0;
+	int cnt = 0;
+
+	/* record projection info */
+	int nCols = scan->ss_currentRelation->rd_att->natts;
+	bool *proj = palloc0(sizeof(bool) * nCols);
+	GetNeededColumnsForScan((Node* )scan->ps.plan->targetlist, proj, nCols);
+	GetNeededColumnsForScan((Node* )scan->ps.plan->qual, proj, nCols);
+	int16 *proj_pos = palloc0(sizeof(int16) * nCols);
+
+	int j = 0;
+	for (int i = 0; i < nCols; i++)
+	{
+		if (proj[i] == true)
+		{
+			proj_pos[j] = i;
+			j++;
+		}
+		else
+			continue;
+	}
+
 	foreach(hk, hjstate->hj_OuterHashKeys)
 	{
 		ExprState  *keyexpr = (ExprState *) lfirst(hk);
 		Var *variable = (Var *) keyexpr->expr;
-		rf->joinkeys = lappend_int(rf->joinkeys, variable->varattno);
-		i++;
+		Assert(variable->varattno <= j);
+		rf->joinkeys = lappend_int(rf->joinkeys, proj_pos[variable->varattno-1]);
+		cnt++;
 	}
-	rf->hashfunctions = (FmgrInfo *) palloc(i * sizeof(FmgrInfo));
-	memcpy(rf->hashfunctions, hjstate->hj_HashTable->hashfunctions, i*sizeof(FmgrInfo));
+
+	rf->hashfunctions = (FmgrInfo *) palloc(cnt * sizeof(FmgrInfo));
+	memcpy(rf->hashfunctions, hjstate->hj_HashTable->hashfunctions, cnt*sizeof(FmgrInfo));
 	size_t size = offsetof(BloomFilterData, data) + hjstate->hj_HashTable->bloomfilter->data_size;
 	rf->bloomfilter = palloc0(size);
 	memcpy(rf->bloomfilter, hjstate->hj_HashTable->bloomfilter, size);
 	rf->hasRuntimeFilter = true;
 	rf->stopRuntimeFilter = false;
 	rf->checkedSamples = false;
+
+	if (proj)
+	{
+		pfree(proj);
+	}
+	if (proj_pos)
+	{
+		pfree(proj_pos);
+	}
 }
 
 /*
@@ -821,7 +852,7 @@ ExecHashJoinOuterGetTuple(PlanState *outerNode,
 		rf->hasRuntimeFilter == false)
 	{
 		Assert(hashtable->bloomfilter->isCreated);
-		CreateRuntimeFilterState(rf, hjstate);
+		CreateRuntimeFilterState(rf, hjstate, (ScanState *)outerNode);
 	}
 
 	/* Adaptive runtime filter check.

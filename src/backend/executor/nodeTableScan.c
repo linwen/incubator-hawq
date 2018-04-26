@@ -87,7 +87,7 @@ FreeScanRuntimefilterState(RuntimeFilterState* rfstate)
 	}
 	DestroyBloomFilter(bf);
 	rfstate->bloomfilter = NULL;
-	if(rfstate->joinkeys)
+	if (rfstate->joinkeys)
 	{
 		list_free(rfstate->joinkeys);
 		rfstate->joinkeys = NIL;
