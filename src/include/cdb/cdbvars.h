@@ -948,6 +948,8 @@ extern char* hawq_hashjoin_bloomfilter_max_memory_size;
  */
 extern double hawq_hashjoin_bloomfilter_ratio;
 
+extern int hawq_hashjoin_bloomfilter_sampling_number;
+
 /* Get statistics for partitioned parent from a child */
 extern bool 	gp_statistics_pullup_from_child_partition;
 
