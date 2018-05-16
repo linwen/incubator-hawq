@@ -821,8 +821,11 @@ CreateRuntimeFilterState(HashJoinState *hjstate)
 		rf->joinkeys = lappend_int(rf->joinkeys, variable->varattno);
 		i++;
 	}
-	rf->hashfunctions = hjstate->hj_HashTable->hashfunctions;
-	rf->bloomfilter = hjstate->hj_HashTable->bloomfilter;
+	rf->hashfunctions = (FmgrInfo *) palloc(i * sizeof(FmgrInfo));
+	memcpy(rf->hashfunctions, hjstate->hj_HashTable->hashfunctions, i*sizeof(FmgrInfo));
+	size_t size = offsetof(BloomFilterData, data) + hjstate->hj_HashTable->bloomfilter->data_size;
+	rf->bloomfilter = palloc0(size);
+	memcpy(rf->bloomfilter, hjstate->hj_HashTable->bloomfilter, size);
 	rf->hasRuntimeFilter = true;
 	rf->stopRuntimeFilter = false;
 	rf->checkedSamples = false;
