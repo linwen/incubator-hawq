@@ -86,10 +86,9 @@ FreeScanRuntimefilterState(RuntimeFilterState* rfstate)
 			 bf->nTested == 0 ? 0 : (float)((float)(bf->nTested - bf->nMatched)/(float)(bf->nTested)));
 		DestroyBloomFilter(rfstate->bloomfilter);
 	}
-	if (rfstate->joinkeys)
+	if (rfstate->joinkeys != NIL)
 	{
 		list_free(rfstate->joinkeys);
-		rfstate->joinkeys = NIL;
 	}
 	if (rfstate->hashfunctions != NULL)
 	{
