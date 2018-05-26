@@ -4428,7 +4428,7 @@ static struct config_bool ConfigureNamesBool[] =
 			GUC_NOT_IN_SAMPLE | GUC_NO_SHOW_ALL | GUC_GPDB_ADDOPT
 		},
 		&hawq_hashjoin_bloomfilter,
-		false, NULL, NULL
+		true, NULL, NULL
 	},
 
 	/* End-of-list marker */

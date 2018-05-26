@@ -168,5 +168,9 @@ under the License.
                      For example, http://localhost:8432/rps
         </description>
     </property>
+        <property>
+                <name>hawq_hashjoin_bloomfilter</name>
+                <value>1</value>
+        </property>
     <!-- HAWQ ACL parameters ends here-->
 </configuration>

@@ -234,7 +234,7 @@ int 		gp_hashagg_spillbatch_min = 0;
 int 		gp_hashagg_spillbatch_max = 0;
 
 /* hash join to use bloom filter: default is false, means not used */
-bool 	 	hawq_hashjoin_bloomfilter = false;
+bool 	 	hawq_hashjoin_bloomfilter = true;
 
 /* maximum memory size for one Bloom filter */
 char*		hawq_hashjoin_bloomfilter_max_memory_size;
