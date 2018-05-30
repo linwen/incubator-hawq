@@ -820,12 +820,12 @@ CreateRuntimeFilterState(HashJoinState *hjstate, ProjectionInfo* projInfo)
 	{
 		ExprState  *keyexpr = (ExprState *) lfirst(hk);
 		Var *variable = (Var *) keyexpr->expr;
-		if (projInfo != NULL && projInfo->isVarList)
+		if (projInfo != NULL && projInfo->pi_isVarList)
 		{
 			Assert(projInfo->pi_varNumbers != NULL);
 			rf->joinkeys = lappend_int(rf->joinkeys, projInfo->pi_varNumbers[variable->varattno-1]);
 		}
-		else if (projInfo != NULL && !projInfo->isVarList)
+		else if (projInfo != NULL && !projInfo->pi_isVarList)
 		{
 			ListCell *tl;
 			Assert(projInfo->pi_targetlist != NULL);
